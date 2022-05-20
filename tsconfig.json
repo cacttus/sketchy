@@ -1,16 +1,30 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "module": "commonjs",
-    "noImplicitAny": true,
+    "typeRoots" : [
+      "node_modules/@types/",
+    ],
+    "module": "ES6",
+    "target": "ES6",
     "sourceMap": true,
+    "esModuleInterop": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "noEmitOnError":true,//	boolean	false	Do not emit outputs if any errors were reported.
+    "noErrorTruncation":true,//	boolean	false	Do not truncate error messages.
+    "noFallthroughCasesInSwitch":true,//	boolean	false	Report errors for fallthrough cases in switch statement.
     "baseUrl": ".",
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
     "outDir": "dist",
     "moduleResolution": "node",
     "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
     "paths": {
       "*": ["node_modules/*"]
     }
   },
-  "include": ["src/**/*"]
+  "include": ["./src/*"],
+  "exclude": ["./node_modules", "./dist", "./.git"]
 }

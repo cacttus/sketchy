@@ -2,14 +2,15 @@
   "name": "sketchy",
   "productName": "sketchy",
   "version": "1.0.0",
-  "description": "My Electron application description",
-  "main": "dist/index.js",
+  "description": "My Electron application description.",
+  "main": "./dist/main.js",
   "scripts": {
-    "start": "tsc && electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "eslint --ext .ts ."
+    "lint": "eslint --ext .tsx --ext .ts .",
+    "build-dev": "set NODE_ENV=development && cp ./src/index.html ./dist/index.html && cp ./src/logo.svg ./dist/logo.svg && cp ./src/App.css ./dist/App.css && webpack --config ./webpack.config.render.js --mode development && webpack --config ./webpack.config.main.js --mode development",
+    "start": "npm run build-dev && electron ."
   },
   "keywords": [],
   "author": {
@@ -21,12 +22,6 @@
     "forge": {
       "packagerConfig": {},
       "makers": [
-        {
-          "name": "@electron-forge/maker-squirrel",
-          "config": {
-            "name": "sketchy"
-          }
-        },
         {
           "name": "@electron-forge/maker-zip",
           "platforms": [
@@ -48,16 +43,49 @@
     "@electron-forge/cli": "^6.0.0-beta.63",
     "@electron-forge/maker-deb": "^6.0.0-beta.63",
     "@electron-forge/maker-rpm": "^6.0.0-beta.63",
-    "@electron-forge/maker-squirrel": "^6.0.0-beta.63",
     "@electron-forge/maker-zip": "^6.0.0-beta.63",
-    "@typescript-eslint/eslint-plugin": "^5.24.0",
-    "@typescript-eslint/parser": "^5.24.0",
-    "electron": "18.2.3",
-    "eslint": "^8.15.0",
-    "eslint-plugin-import": "^2.26.0",
-    "typescript": "^4.5.5"
+    "@svgr/webpack": "^6.2.1",
+    "@types/jquery": "^3.5.14",
+    "@types/node": "^16.11.36",
+    "@types/react": "^18.0.9",
+    "@types/react-dom": "^18.0.4",
+    "concurrently": "^7.2.0",
+    "css-loader": "^6.7.1",
+    "eslint-webpack-plugin": "^3.1.1",
+    "file-loader": "^6.2.0",
+    "html-webpack-plugin": "^5.5.0",
+    "react": "^18.1.0",
+    "react-dom": "^18.1.0",
+    "react-svg-loader": "^3.0.3",
+    "style-loader": "^3.3.1",
+    "svg-url-loader": "^7.1.1",
+    "ts-loader": "^9.3.0",
+    "typescript": "^4.5.5",
+    "web-vitals": "^2.1.4",
+    "webpack": "^5.72.1",
+    "webpack-cli": "^4.9.2",
+    "webpack-dev-server": "^4.9.0"
   },
   "dependencies": {
-    "electron-squirrel-startup": "^1.0.0"
+    "@emotion/react": "^11.9.0",
+    "@emotion/styled": "^11.8.1",
+    "@mui/material": "^5.8.0",
+    "electron": "18.2.3",
+    "electron-build": "^0.0.3",
+    "electron-reloader": "^1.2.3",
+    "jquery": "^3.6.0",
+    "rpmbuild": "^0.0.23"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }

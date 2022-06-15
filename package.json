@@ -9,13 +9,12 @@
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .tsx --ext .ts .",
-    "build-dev": "set NODE_ENV=development && cp ./src/index.html ./dist/index.html && cp ./src/logo.svg ./dist/logo.svg && cp ./src/App.css ./dist/App.css && webpack --config ./webpack.config.render.js --mode development && webpack --config ./webpack.config.main.js --mode development",
+    "build-dev": "set NODE_ENV=development && cp -u ./src/index.html ./dist/index.html && cp -u ./src/require.js ./dist/require.js && cp -u ./src/preload.js ./dist/preload.js && cp -u ./src/logo.svg ./dist/logo.svg && webpack --config ./webpack.config.render.js --mode development && webpack --config ./webpack.config.main.js --mode development",
     "start": "npm run build-dev && electron ."
   },
   "keywords": [],
   "author": {
-    "name": "name",
-    "email": "email"
+    "name": "name"
   },
   "license": "MIT",
   "config": {
@@ -69,10 +68,10 @@
   "dependencies": {
     "@emotion/react": "^11.9.0",
     "@emotion/styled": "^11.8.1",
+    "@mui/icons-material": "^5.8.0",
     "@mui/material": "^5.8.0",
     "electron": "18.2.3",
     "electron-build": "^0.0.3",
-    "electron-reloader": "^1.2.3",
     "jquery": "^3.6.0",
     "rpmbuild": "^0.0.23"
   },

@@ -3,18 +3,7 @@ import ReactDOM from "react-dom/client";
 import './Render.css';
 import App from "./App";
 import $ from 'jquery';
-
-// If development environment
-//https://www.geeksforgeeks.org/hot-reload-in-electronjs/
-const env = process.env.NODE_ENV || 'development';
-if (env === 'development') {
-  try {
-      require('electron-reloader')(module, {
-          debug: true,
-          watchRenderer: true
-      });
-  } catch (_) { console.log('Error'); }    
-}
+import { ipcRenderer } from "electron";
 
 $(document).ready(function() {
   console.log("INITIALIZING REACT DOM");
@@ -26,4 +15,16 @@ $(document).ready(function() {
       <App />
     </React.StrictMode>
   );
+
+  ipcRenderer.invoke('get-files', './testdata').then((res : Array<string> )=>{
+    res.forEach((x : string)=>{
+      console.log("booger: " + x);
+    })
+  });
+  
 });
+export class GuRender {
+  public static exitApp() : void { 
+    console.log("uh..")
+  }
+}

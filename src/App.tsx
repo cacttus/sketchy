@@ -1,38 +1,67 @@
 import React from 'react';
 import logo from './logo.svg';
-import Button from '@mui/material/Button';
-import Container from '@mui/material/Button';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import Grid from "@mui/material/Grid";
-import Paper from "@mui/material/Paper";
-import Modal from "@mui/material/Modal";
-import Box from "@mui/material/Box";
+import { ThemeProvider, createTheme, styled } from '@mui/material/styles';
 import Typography from "@mui/material/Typography";
-import { Menu } from '@mui/material';
-import { MenuItem } from '@mui/material';
-import {GuRender} from './Render';
+import {
+  Menu, Divider, Stack, MenuItem, Grid, Paper, Modal, Button, Box, Collapse,
+  List, ListItem, ListItemButton, ListItemIcon, ListItemText, ListSubheader
+} from '@mui/material';
+import { RenderThread } from './Render';
+// import {ExpandLess, ExpandMore, StarBorder } from '@mui/icons-material';
+// import SendIcon from '@mui/icons-material/Send';
+// import DraftsIcon from '@mui/icons-material/Drafts';
+// import InboxIcon from '@mui/icons-material/Inbox';
 
-//import { makeStyles } from "@mui/material/styles";
+function NestedList() {
+  const [open, setOpen] = React.useState(true);
 
-// const useStyles = makeStyles((theme: any) => ({
-//   paper: {
-//     padding: theme.spacing(1),
-//     textAlign: "center",
-//     color: theme.palette.text.secondary
-//   }
-// }));
+  const handleClick = () => {
+    setOpen(!open);
+  };
 
-// const theme = {
-//   palette: {
-//     type: 'light',
-//     primary: {
-//       main: '#212729',
-//     },
-//     secondary: {
-//       main: '#abcfe2',
-//     },
-//   }
-// };
+  return (
+    <List
+      sx={{ width: '100%', maxWidth: 360, bgcolor: 'background.paper' }}
+      component="nav"
+      aria-labelledby="nested-list-subheader"
+      subheader={
+        <ListSubheader component="div" id="nested-list-subheader">
+          Nested List Items
+        </ListSubheader>
+      } >
+      <ListItemButton>
+        <ListItemIcon>
+          <span className="material-icons md-dark">outbox</span>
+        </ListItemIcon>
+        <ListItemText primary="Sent mail" />
+      </ListItemButton>
+      <ListItemButton>
+        <ListItemIcon>
+          <span className="material-icons md-dark">drafts</span>
+        </ListItemIcon>
+        <ListItemText primary="Drafts" />
+      </ListItemButton>
+      <ListItemButton onClick={handleClick}>
+        <ListItemIcon>
+          <span className="material-icons md-dark">inbox</span>
+
+        </ListItemIcon>
+        <ListItemText primary="Inbox" />
+        {open ? <span className="material-icons md-dark">expand_less</span> : <span className="material-icons md-dark">expand_more</span>}
+      </ListItemButton>
+      <Collapse in={open} timeout="auto" unmountOnExit>
+        <List component="div" disablePadding>
+          <ListItemButton sx={{ pl: 4 }}>
+            <ListItemIcon>
+              <span className="material-icons md-dark">star_border</span>
+            </ListItemIcon>
+            <ListItemText primary="Starred" />
+          </ListItemButton>
+        </List>
+      </Collapse>
+    </List>
+  );
+}
 
 function GridItem() {
   return (
@@ -45,21 +74,13 @@ function GridItem() {
   );
 }
 
-// export default function AutoGrid() {
-//   const classes = useStyles();
-//   return (
-//     <div>
-//       <h3> Ex 4: Responsive Material UI Grid </h3>
-//       // I am a container Grid with 1 (8px) spacing
-//       <Grid container spacing={1}>
-//         <GridItem classes={classes} />
-//         <GridItem classes={classes} />
-//         <GridItem classes={classes} />
-//         <GridItem classes={classes} />
-//       </Grid>
-//     </div>
-//   );
-// }
+const Item = styled(Paper)(({ theme }) => ({
+  backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
+  ...theme.typography.body2,
+  padding: theme.spacing(1),
+  textAlign: 'center',
+  color: theme.palette.text.secondary,
+}));
 
 let theme = createTheme({
   palette: {
@@ -82,17 +103,17 @@ class PositionedMenu extends React.Component<any, any>  {
       this.setState({ anchorEl: event.currentTarget });
       //setAnchorEl(event.currentTarget);
     };
-    const closeMenu = () =>{
+    const closeMenu = () => {
       this.setState({ anchorEl: null });
     }
     const exitApp = () => {
       closeMenu();
-      GuRender.exitApp();
+      RenderThread.exitApp();
     };
     const open = Boolean(this.state.anchorEl);
 
     return (
-      <div>
+      <Box sx={{ width: '100%' }}>
         <Button
           id="demo-positioned-button"
           aria-controls={open ? 'demo-positioned-menu' : undefined}
@@ -119,14 +140,11 @@ class PositionedMenu extends React.Component<any, any>  {
         >
           <MenuItem onClick={exitApp}>Exit</MenuItem>
         </Menu>
-      </div>
+
+      </Box>
     );
   }
 }
-
-
-const booger = (x: any) => { console.log("HI"); };
-const open = (x: any) => { };
 function App() {
   // <img src={logo} className="App-logo" alt="logo" />
 
@@ -135,53 +153,62 @@ function App() {
   const [modalOpen, setModalOpen] = React.useState(false);
 
   return (
-    <div>
+    <Box sx={{ width: '100%' }}>
       <ThemeProvider theme={theme}>
-        <PositionedMenu></PositionedMenu>
+        <Stack
+          direction="column"
+          divider={<Divider orientation="vertical" flexItem />}
+          spacing={2}
+        >
+          <Item>
+            <PositionedMenu></PositionedMenu>
+          </Item>
+
+          <Item>
+            <input
+              type="file"
+              id="dirinput"
+              /* @ts-expect-error */
+              directory=""
+              webkitdirectory=""
+              multiple
+              onChange={() => { }}
+            />
+            <label>hi</label>
+          </Item>
+          <Item>
+            <NestedList></NestedList>
+          </Item>
+        </Stack>
+
+        {/*Modal should be outside*/}
+        <Modal
+          open={modalOpen}
+          onClose={() => { setModalOpen(false) }}
+          aria-labelledby="modal-modal-title"
+          aria-describedby="modal-modal-description"
+        >
+          <Paper sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 400,
+            bgcolor: 'background.paper',
+            border: '2px solid #000',
+            boxShadow: 24,
+            p: 4, 
+          }}>
+            <Typography id="modal-modal-title" variant="h6" component="h2">
+              Text in a modal
+            </Typography>
+            <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+              Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
+            </Typography>
+          </Paper>
+        </Modal>
       </ThemeProvider>
-      <Container>
-
-        <ThemeProvider theme={theme}>
-
-          {/* <Menu open={menuOpen}>
-          <MenuItem onClick={booger}>FUCK</MenuItem>
-          <MenuItem onClick={() => { setMenuOpen(true) }}>aaaSSSS</MenuItem>
-        </Menu> */}
-          <Modal
-            open={modalOpen}
-            onClose={() => { setModalOpen(false) }}
-            aria-labelledby="modal-modal-title"
-            aria-describedby="modal-modal-description"
-          >
-            <Paper sx={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: 400,
-              bgcolor: 'background.paper',
-              border: '2px solid #000',
-              boxShadow: 24,
-              p: 4,
-            }}>
-              <Typography id="modal-modal-title" variant="h6" component="h2">
-                Text in a modal
-              </Typography>
-              <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-                Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
-              </Typography>
-            </Paper>
-          </Modal>
-
-          {/* <Grid container spacing={1}>
-            <GridItem />
-            <GridItem />
-            <GridItem />
-            <GridItem />
-          </Grid> */}
-        </ThemeProvider>
-      </Container>
-    </div>
+    </Box>
   );
 }
 

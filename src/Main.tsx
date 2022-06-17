@@ -1,74 +1,128 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, MenuItem } from 'electron';
 import * as path from 'path';
-//import * as fs from 'fs';
 import * as fs from 'fs/promises';
 
 import { Events, Gu } from './Globals';
 
+// class Window {
+//  public browserWindow : BrowserWindow ;
+//  public constructor(bw:BrowserWindow){
+//    this.browserWindow=bw;
+//  }
+// }
+
 class MainProcess {
-  private static mainWindow: BrowserWindow;
+  private static _windows : Array<BrowserWindow> = new Array<BrowserWindow>();
+  
+  public static mainWindow() : BrowserWindow { return this._windows[0]; }
 
   public constructor() {
     var that = this;
 
+    //Main event handling code.
     MainProcess.receive((id: string, args: any) => {
-      if (MainProcess.checkEvent(Events.GetFiles, 1, id, args)) {
-        var f = MainProcess.getFiles(args[0]).then((value: Array<string>) => {
-          MainProcess.send(Events.GetFiles, value);
-        })
-      }
+      that.handleEvents(id,args);
     });
 
-    app.on('ready', () => { that.createWindow(800, 600, false); });
-    app.on('window-all-closed', () => {
-      if (process.platform !== 'darwin') {
-        app.quit();
-      }
-    });
+    MainProcess._windows.push(that.createWindow('index.html', 800, 600, false, false));
+
+    const menu = new Menu()
+    menu.append(new MenuItem({
+      label: 'File',
+      submenu: [
+        {
+          label: 'Devtools',
+          role: 'toggleDevTools',
+          accelerator: 'F12',
+          click: () => { MainProcess.mainWindow().webContents.openDevTools(); }
+        },
+        {
+          label: 'About',
+          role: 'about',
+          accelerator: process.platform === 'darwin' ? 'Alt+Cmd+I' : 'Alt+Shift+I',
+          click: () => { }
+        },
+        {
+          label: 'Exit',
+          role: 'quit',
+          accelerator: process.platform === 'darwin' ? 'Ctrl+Cmd+I' : 'Ctrl+W',
+          click: () => { that.ExitApp(); }
+        },
+      ]
+    }))
+    Menu.setApplicationMenu(menu)
+
   }
 
-  public static send(event: string, data: any = null): void {
-    this.mainWindow.webContents.send("fromMain", [event, data]);
+  public ExitApp(): void {
+    app.quit();
   }
-  public static receive(func: any): void {
+  private static send(event: string, data: any = null): void {
+    MainProcess.mainWindow().webContents.send("fromMain", [event, data]);
+  }
+  private static receive(func: any): void {
     ipcMain.on("toMain", (event: Electron.IpcMainEvent, args: any) => {
+      
       var sys_id: string = args[0];
       var actual_args: any = args[1];
+
+      console.log("Main:" + sys_id);
+
       func(sys_id, actual_args);
     });
   }
-  
+  private handleEvents(id: string, args: any) : void { 
+    if (MainProcess.checkEvent(Events.GetFiles, 1, id, args)) {
+      var f = MainProcess.getFiles(args[0]).then((value: Array<string>) => {
+        MainProcess.send(Events.GetFiles, value);
+      });
+    }
+    else if (MainProcess.checkEvent(Events.ExitApp, 0, id, args)) {
+      MainProcess.mainWindow().close();
+    }
+  }
   private static checkEvent(check_id: string, argcount: number, got_id: string, got_args: any): boolean {
     var b: boolean = false;
     if (check_id.localeCompare(got_id) == 0) {
       b = true;
-      if (got_args.length != argcount) {
+      if (((got_args === null || got_args === undefined) && argcount > 0) || (got_args && got_args.length !== argcount)) {
         throw new Error("Event " + got_id + " had " + got_args.length + " args, needed " + argcount);
       }
     }
     return b;
   }
-  private createWindow(width: number = 800, height: number = 600, fullscreen: boolean = false): void {
+  private createWindow(htmlFile: string, width: number = 800, height: number = 600, fullscreen: boolean = false, is_modal: boolean = false): BrowserWindow {
     var that = this;
+    var bw: BrowserWindow;
+
     var preload = path.join(MainProcess.appPath(), 'preload.js');
-    MainProcess.mainWindow = new BrowserWindow({
+    bw = new BrowserWindow({
       height: height,
       width: width,
       fullscreen: fullscreen,
+      autoHideMenuBar: true, //hide menu bar
+      titleBarStyle: 'hidden',
+      icon: './icon.png',
+      modal: is_modal ? true : false,
+      minimizable: is_modal ? true : false,
+      maximizable: is_modal ? true : false,
+      fullscreenable: is_modal ? true : false,
+      //frame:false,//hides frame.
       webPreferences: {
+        devTools: true,
         preload: path.join(MainProcess.appPath(), 'preload.js'),
-        //https://stackoverflow.com/questions/37994441/how-to-use-fs-module-inside-electron-atom-webpack-application
-        nodeIntegration: true, //This is for the rendering thread. Allow node.
-        contextIsolation: true,
+        nodeIntegration: true, //Access node on rendering thread. IPC is for more secure apps. This is a destkop app. Disable this for server or web apps.
+        contextIsolation: false,
         //enableRemoteModule: false 
       }
     });
+    bw.once('ready-to-show', () => {
+      bw.show()
+    })
 
-    MainProcess.mainWindow.loadFile(path.join(MainProcess.appPath(), 'index.html'));
+    bw.loadFile(path.join(MainProcess.appPath(), htmlFile));
 
-    if (Gu.IsDebug()) {
-      MainProcess.mainWindow.webContents.openDevTools();
-    }
+    return bw;
 
     //Nifties
     // mainWindow.loadURL("google.com");  // option1: (loading a local app running on a local server)
@@ -92,8 +146,14 @@ class MainProcess {
 }
 
 
-var m: MainProcess = new MainProcess();
+var m: MainProcess;
 
 
-
-
+app.on('ready', () => {
+  m = new MainProcess();
+});
+app.on('window-all-closed', () => {
+  if (m) {
+    m.ExitApp();
+  }
+});

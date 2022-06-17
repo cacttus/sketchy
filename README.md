@@ -1,14 +1,19 @@
+
 ### Install, build, run
 npm install
 npm run build
 npm run start
 
+## AppImg/RPM/EXE build
+in main folder .. 
+* npx electron-builder
+
+TODO: make a release script that runs electron-builder.
+
 ### Additional Info
 npx electron .
 npx webpack-cli build --c main.webpack.js 
 npx webpack-cli build --c render.webpack.js 
-npx electron-forge start
-npx electron-forge make
 npx webpack-dev-server
 npm start
 

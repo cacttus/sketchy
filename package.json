@@ -5,17 +5,37 @@
   "description": "My Electron application description.",
   "main": "./dist/main.js",
   "scripts": {
-    "package": "electron-forge package",
-    "make": "electron-forge make",
-    "publish": "electron-forge publish",
     "lint": "eslint --ext .tsx --ext .ts .",
-    "build-dev": "set NODE_ENV=development && cp -u ./src/index.html ./dist/index.html && cp -u ./src/require.js ./dist/require.js && cp -u ./src/preload.js ./dist/preload.js && cp -u ./src/logo.svg ./dist/logo.svg && webpack --config ./webpack.config.render.js --mode development && webpack --config ./webpack.config.main.js --mode development",
+    "build-dev": "./build-dev.sh",
     "start": "npm run build-dev && electron ."
   },
-  "keywords": [],
   "author": {
-    "name": "name"
+    "name": "Barney Rubble",
+    "email": "b@rubble.com",
+    "url": "http://barnyrubble.tumblr.com/"
   },
+  "build": {
+    "appId": "com.example.app",
+    "files": [
+      "./dist/**/*",
+      "./dist/main.js"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "./icon.png"
+    },
+    "win": {
+      "target": "squirrel",
+      "icon": "./icon.png"
+    },
+    "directories": {
+      "buildResources": "dist"
+    }
+  },
+  "keywords": [],
   "license": "MIT",
   "config": {
     "forge": {
@@ -39,10 +59,6 @@
     }
   },
   "devDependencies": {
-    "@electron-forge/cli": "^6.0.0-beta.63",
-    "@electron-forge/maker-deb": "^6.0.0-beta.63",
-    "@electron-forge/maker-rpm": "^6.0.0-beta.63",
-    "@electron-forge/maker-zip": "^6.0.0-beta.63",
     "@svgr/webpack": "^6.2.1",
     "@types/jquery": "^3.5.14",
     "@types/node": "^16.11.36",
@@ -50,6 +66,8 @@
     "@types/react-dom": "^18.0.4",
     "concurrently": "^7.2.0",
     "css-loader": "^6.7.1",
+    "electron": "18.2.3",
+    "electron-builder": "^23.0.3",
     "eslint-webpack-plugin": "^3.1.1",
     "file-loader": "^6.2.0",
     "html-webpack-plugin": "^5.5.0",
@@ -68,9 +86,7 @@
   "dependencies": {
     "@emotion/react": "^11.9.0",
     "@emotion/styled": "^11.8.1",
-    "@mui/icons-material": "^5.8.0",
-    "@mui/material": "^5.8.0",
-    "electron": "18.2.3",
+    "bootstrap": "^5.1.3",
     "electron-build": "^0.0.3",
     "jquery": "^3.6.0",
     "rpmbuild": "^0.0.23"

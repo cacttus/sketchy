@@ -1,7 +1,7 @@
-import { app, BrowserWindow, ipcMain, Menu, MenuItem } from 'electron';
+import { LoadURLOptions, app, BrowserWindow, ipcMain, Menu, MenuItem } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-
+import * as ReactDOMServer from 'react-dom/server';
 import { Events, Gu } from './Globals';
 
 // class Window {
@@ -12,24 +12,33 @@ import { Events, Gu } from './Globals';
 // }
 
 class MainProcess {
-  private static _windows : Array<BrowserWindow> = new Array<BrowserWindow>();
-  
-  public static mainWindow() : BrowserWindow { return this._windows[0]; }
+  private static _windows: Array<BrowserWindow> = new Array<BrowserWindow>();
+
+  public static mainWindow(): BrowserWindow { return this._windows[0]; }
 
   public constructor() {
     var that = this;
 
     //Main event handling code.
     MainProcess.receive((id: string, args: any) => {
-      that.handleEvents(id,args);
+      that.handleEvents(id, args);
     });
 
-    MainProcess._windows.push(that.createWindow('index.html', 800, 600, false, false));
+    MainProcess._windows.push(that.createWindow('MainWindow.js', 800, 600, false, false));
 
     const menu = new Menu()
     menu.append(new MenuItem({
       label: 'File',
       submenu: [
+        {
+          label: 'Fullscreen',
+          accelerator: 'F11',
+          click: () => { 
+            MainProcess.mainWindow().setFullScreenable(true);
+            MainProcess.mainWindow().setFullScreen(!MainProcess.mainWindow().isFullScreen()); 
+          }
+        },
+
         {
           label: 'Devtools',
           role: 'toggleDevTools',
@@ -40,7 +49,10 @@ class MainProcess {
           label: 'About',
           role: 'about',
           accelerator: process.platform === 'darwin' ? 'Alt+Cmd+I' : 'Alt+Shift+I',
-          click: () => { }
+          click: () => { 
+            that.createWindow('AboutWindow.js', 800, 600, false, false)
+            
+          }
         },
         {
           label: 'Exit',
@@ -62,7 +74,7 @@ class MainProcess {
   }
   private static receive(func: any): void {
     ipcMain.on("toMain", (event: Electron.IpcMainEvent, args: any) => {
-      
+
       var sys_id: string = args[0];
       var actual_args: any = args[1];
 
@@ -71,7 +83,7 @@ class MainProcess {
       func(sys_id, actual_args);
     });
   }
-  private handleEvents(id: string, args: any) : void { 
+  private handleEvents(id: string, args: any): void {
     if (MainProcess.checkEvent(Events.GetFiles, 1, id, args)) {
       var f = MainProcess.getFiles(args[0]).then((value: Array<string>) => {
         MainProcess.send(Events.GetFiles, value);
@@ -91,11 +103,10 @@ class MainProcess {
     }
     return b;
   }
-  private createWindow(htmlFile: string, width: number = 800, height: number = 600, fullscreen: boolean = false, is_modal: boolean = false): BrowserWindow {
+  private createWindow(jsFile: string, width: number = 800, height: number = 600, fullscreen: boolean = false, is_modal: boolean = false): BrowserWindow {
     var that = this;
     var bw: BrowserWindow;
 
-    var preload = path.join(MainProcess.appPath(), 'preload.js');
     bw = new BrowserWindow({
       height: height,
       width: width,
@@ -110,24 +121,27 @@ class MainProcess {
       //frame:false,//hides frame.
       webPreferences: {
         devTools: true,
-        preload: path.join(MainProcess.appPath(), 'preload.js'),
+        //preload: path.join(MainProcess.appPath(), 'preload.js'),
         nodeIntegration: true, //Access node on rendering thread. IPC is for more secure apps. This is a destkop app. Disable this for server or web apps.
         contextIsolation: false,
-        //enableRemoteModule: false 
+        //enableRemoteModule: false /*  */
       }
     });
-    bw.once('ready-to-show', () => {
-      bw.show()
-    })
 
-    bw.loadFile(path.join(MainProcess.appPath(), htmlFile));
+    //Dynamcially load the index file,then dynamically load the script.
+    //Simply sending text/html to the window doesn't work in Electron. If it did, we could get rid of the HTML file alltogther.
+    bw.loadFile(path.join(MainProcess.appPath(), "index.html"));
+    bw.webContents.once('dom-ready', () => {
+      bw.webContents.executeJavaScript(
+        " var s = document.createElement('script'); " +
+        " s.type = 'text/javascript'; " +
+        " s.src = '" + jsFile + "';  " +
+        " document.body.appendChild(s); " +
+        ""
+      );
+    });
 
     return bw;
-
-    //Nifties
-    // mainWindow.loadURL("google.com");  // option1: (loading a local app running on a local server)
-    // mainWindow.setFullScreen(true);
-    //   if (BrowserWindow.getAllWindows().length === 0) {
   };
   private static async getFiles(dir: string): Promise<Array<string>> {
     var flist: Array<string> = new Array<string>();

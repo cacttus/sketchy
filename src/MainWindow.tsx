@@ -11,6 +11,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { BrowserWindow } from 'electron';
+import { Stats } from "webpack";
 
 export class RenderThread {
   public constructor() {
@@ -30,48 +31,29 @@ export class RenderThread {
     );
     root.render(
       <React.StrictMode>
-        <div className="container">
-          <div className="row">
-            <div className="col-sm">
 
-              <nav className="nav">
-                <a className="nav-link active" aria-current="page" href="#">Active</a>
-                <a className="nav-link" href="#">Link</a>
-                <a className="nav-link" href="#">Link</a>
-                <a className="nav-link disabled" href="#"
-                  /* @ts-expect-error */
-                  tabIndex="-1" aria-disabled="true">Disabled</a>
-              </nav>
+        <div className="container-fluid h-100">
+          <div className="row justify-content-center h-100">
+            <div className="col-12">
 
-              <div className="form-check form-switch">
-                <input className="form-check-input" type="checkbox" id="flexSwitchCheckDefault"/>
-                <label className="form-check-label" htmlFor="flexSwitchCheckDefault">Default switch checkbox input</label>
+              <div className="row justify-content-center flex-grow-1">
+                  <button className="btn btn-primary" style={{ maxWidth: '10em' }} onClick={that.randomImage}>Random Image</button>
+                  <img id="theImage" style={{ border: 'none', display: 'block' }}></img>
+              </div>  
+
+              <div className="row justify-content-center fixed-bottom">
+                <div className="progress" style={{ height: '.3em' }}>
+                  {/* @ts-expect-error */}
+                  <div className="progress-bar w-75" style={{ height: '.3em' }} role="progressbar" aria-valuenow="34" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
               </div>
 
-              <nav className="navbar navbar-light bg-light">
-                <div className="container">
-
-                  {/* <a class="navbar-brand" href="#">
-                    <img src="/docs/5.0/assets/brand/bootstrap-logo.svg" alt="" width="30" height="24">
-                  </a> */}
-
-                  <span className="material-icons md-dark">menu</span>
-                </div>
-              </nav>
-
-
-              <button className="btn btn-primary" onClick={that.randomImage}>Random Image</button>
-              <button className="btn btn-primary" onClick={() => { }}>fs</button>
 
             </div>
-          </div>
 
-          <div className="progress">
-            {/* @ts-expect-error */}
-            <div className="progress-bar w-75" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
           </div>
-
         </div>
+
       </React.StrictMode>
     );
 
@@ -97,24 +79,25 @@ export class RenderThread {
 
           var fullPath: string = path.join(__dirname, path.join('/testdata', file));
 
-          fs.readFile(fullPath).then((value: Buffer) => {
-            var valueString = value.toString('base64');
-            $('#theImage').html('<img width="100%" height="auto" src="data:image/png;base64,' + valueString + '" />');
+          fs.access(fullPath).then(() => {
+            fs.readFile(fullPath).then((value: Buffer) => {
+              var valueString = value.toString('base64');
+              $("#theImage").attr("src", "data:image/png;base64," + valueString + "");
+              //$('#theImage').html('<img style="display:inline-block" width="100%" height="100%" src="data:image/png;base64,' + valueString + '" />');
+            });
           });
-
         }
-
       });
-
   }
   private static async getFiles(dir: string): Promise<Array<string>> {
     var flist: Array<string> = new Array<string>();
     var fq: string = path.join(__dirname, dir);
-    const files: any = await fs.readdir(fq);
-    for (const file of files) {
-      flist.push(file);
-    }
-    return flist;
+    return fs.readdir(fq);
+    //const files: any = await ;
+    //for (const file of files) {
+    //  flist.push(file);
+    //}
+    //return flist;
   }
   public static send(event: string, data: any = null): void {
     //Send event to main.

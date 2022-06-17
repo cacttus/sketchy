@@ -3,10 +3,12 @@ const path = require("path");
 
 
 module.exports = {
- // mode: 'development', //'development' or 'production' will minify the code
+  // mode: 'development', //'development' or 'production' will minify the code
+  mode: "development",
   entry: path.resolve(__dirname, "./src/Main.tsx"),
   target: 'electron-main', //electron-renderer
   devtool: 'eval-source-map',
+  stats: 'normal',
   module: {
     rules: [
       {
@@ -22,9 +24,16 @@ module.exports = {
         use: ["file-loader"],
       },
       {
-        test: /\.svg$/,
-        use: ['svg-url-loader'],
+        test: /\.(jpe?g|png|gif|svg)$/i,
+        use: ['file-loader?name=[name].[ext]&outputPath=images/&publicPath=images/',
+          'image-webpack-loader'
+        ]
       },
+      {
+        test: /\.(eot|ttf|woff|woff2)(\?v=\d+\.\d+\.\d+)?$/,
+        use: 'file-loader?name=[name].[ext]&outputPath=fonts/&publicPath=fonts/'
+      }
+
     ],
   },
   resolve: {

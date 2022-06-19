@@ -1,111 +1,75 @@
-import { LoadURLOptions, app, BrowserWindow, ipcMain, Menu, MenuItem } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, MenuItem, dialog } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import * as ReactDOMServer from 'react-dom/server';
-import { Events, Gu } from './Globals';
+import { RPCMethods } from "./Remote"
+import {Blob} from 'buffer';
 
-// class Window {
-//  public browserWindow : BrowserWindow ;
-//  public constructor(bw:BrowserWindow){
-//    this.browserWindow=bw;
-//  }
-// }
-
+/**
+ This is the main process code, which can be moved into the rendering thread.
+ If you enable node integration in electron, you don't need a Main process, or, IPC. 
+ This is useful for quick desktop apps that run on localhost, and don't require internet security.
+*/
 class MainProcess {
   private static _windows: Array<BrowserWindow> = new Array<BrowserWindow>();
-
   public static mainWindow(): BrowserWindow { return this._windows[0]; }
 
   public constructor() {
-    var that = this;
-
-    //Main event handling code.
-    MainProcess.receive((id: string, args: any) => {
-      that.handleEvents(id, args);
-    });
+    let that = this;
 
     MainProcess._windows.push(that.createWindow('MainWindow.js', 800, 600, false, false));
 
-    const menu = new Menu()
-    menu.append(new MenuItem({
-      label: 'File',
-      submenu: [
-        {
-          label: 'Fullscreen',
-          accelerator: 'F11',
-          click: () => { 
-            MainProcess.mainWindow().setFullScreenable(true);
-            MainProcess.mainWindow().setFullScreen(!MainProcess.mainWindow().isFullScreen()); 
-          }
-        },
+    //Register RPC callbacks
+    MainProcess.registerCallbacks();
 
-        {
-          label: 'Devtools',
-          role: 'toggleDevTools',
-          accelerator: 'F12',
-          click: () => { MainProcess.mainWindow().webContents.openDevTools(); }
-        },
-        {
-          label: 'About',
-          role: 'about',
-          accelerator: process.platform === 'darwin' ? 'Alt+Cmd+I' : 'Alt+Shift+I',
-          click: () => { 
-            that.createWindow('AboutWindow.js', 800, 600, false, false)
-            
-          }
-        },
-        {
-          label: 'Exit',
-          role: 'quit',
-          accelerator: process.platform === 'darwin' ? 'Ctrl+Cmd+I' : 'Ctrl+W',
-          click: () => { that.ExitApp(); }
-        },
-      ]
-    }))
-    Menu.setApplicationMenu(menu)
-
+    that.createMenu();
   }
 
   public ExitApp(): void {
     app.quit();
   }
-  private static send(event: string, data: any = null): void {
-    MainProcess.mainWindow().webContents.send("fromMain", [event, data]);
-  }
-  private static receive(func: any): void {
-    ipcMain.on("toMain", (event: Electron.IpcMainEvent, args: any) => {
+  // private send(event: string, data: any = null): void {
+  //   MainProcess.mainWindow().webContents.send("fromMain", [event, data]);
+  // }
+  // private receive(func: any): void {
+  //   ipcMain.on("toMain", (event: Electron.IpcMainEvent, args: any) => {
 
-      var sys_id: string = args[0];
-      var actual_args: any = args[1];
+  //     var rpcName: string = args[0]; // The name of the RPC method
+  //     var rpcArgs: any = args[1]; // The arguments
 
-      console.log("Main:" + sys_id);
+  //     console.log("Main:" + rpcName);
 
-      func(sys_id, actual_args);
-    });
-  }
-  private handleEvents(id: string, args: any): void {
-    if (MainProcess.checkEvent(Events.GetFiles, 1, id, args)) {
-      var f = MainProcess.getFiles(args[0]).then((value: Array<string>) => {
-        MainProcess.send(Events.GetFiles, value);
-      });
-    }
-    else if (MainProcess.checkEvent(Events.ExitApp, 0, id, args)) {
-      MainProcess.mainWindow().close();
-    }
-  }
-  private static checkEvent(check_id: string, argcount: number, got_id: string, got_args: any): boolean {
-    var b: boolean = false;
-    if (check_id.localeCompare(got_id) == 0) {
-      b = true;
-      if (((got_args === null || got_args === undefined) && argcount > 0) || (got_args && got_args.length !== argcount)) {
-        throw new Error("Event " + got_id + " had " + got_args.length + " args, needed " + argcount);
-      }
-    }
-    return b;
-  }
+  //     func(rpcName, rpcArgs);
+  //   });
+  // }
+  // private handleEvents(rpcName: string, rpcArgs: any): void {
+  //   var that = this;
+
+  //   /* @ts-ignore */
+  //   var fid: any = that[rpcName];
+  //   fid(rpcArgs);
+
+  //   if (MainProcess.checkEvent(Events.GetFiles, 1, rpcName, rpcArgs)) {
+  //     var f = MainProcess.getFiles(rpcArgs[0]).then((value: Array<string>) => {
+  //       that.send(Events.GetFiles, value);
+  //     });
+  //   }
+  //   else if (MainProcess.checkEvent(Events.ExitApp, 0, rpcName, rpcArgs)) {
+  //     MainProcess.mainWindow().close();
+  //   }
+  // }
+  // private static checkEvent(rpcName: string, argcount: number, got_name: string, got_args: any): boolean {
+  //   var b: boolean = false;
+  //   if (rpcName.localeCompare(got_name) == 0) {
+  //     b = true;
+  //     if (((got_args === null || got_args === undefined) && argcount > 0) || (got_args && got_args.length !== argcount)) {
+  //       throw new Error("Event " + got_name + " had " + got_args.length + " args, needed " + argcount);
+  //     }
+  //   }
+  //   return b;
+  // }
   private createWindow(jsFile: string, width: number = 800, height: number = 600, fullscreen: boolean = false, is_modal: boolean = false): BrowserWindow {
-    var that = this;
-    var bw: BrowserWindow;
+    let that = this;
+    let bw: BrowserWindow;
 
     bw = new BrowserWindow({
       height: height,
@@ -121,9 +85,9 @@ class MainProcess {
       //frame:false,//hides frame.
       webPreferences: {
         devTools: true,
-        //preload: path.join(MainProcess.appPath(), 'preload.js'),
-        nodeIntegration: true, //Access node on rendering thread. IPC is for more secure apps. This is a destkop app. Disable this for server or web apps.
-        contextIsolation: false,
+        preload: path.join(MainProcess.appPath(), 'preload.js'), // only if nodeintegration is false.
+        nodeIntegration: false, //Access node on rendering thread. IPC is for more secure apps. This is a destkop app. Disable this for server or web apps.
+        contextIsolation: true, //set to false for desktop only when nodeintegration=true
         //enableRemoteModule: false /*  */
       }
     });
@@ -143,31 +107,128 @@ class MainProcess {
 
     return bw;
   };
+  private createMenu(): void {
+    let that = this;
+    const menu = new Menu()
+    menu.append(new MenuItem({
+      label: 'File',
+      submenu: [
+        {
+          label: 'Fullscreen',
+          accelerator: 'F11',
+          click: () => {
+            MainProcess.mainWindow().setFullScreenable(true);
+            MainProcess.mainWindow().setFullScreen(!MainProcess.mainWindow().isFullScreen());
+          }
+        },
+
+        {
+          label: 'Devtools',
+          role: 'toggleDevTools',
+          accelerator: 'F12',
+          click: () => { MainProcess.mainWindow().webContents.openDevTools(); }
+        },
+        {
+          label: 'About',
+          role: 'about',
+          accelerator: process.platform === 'darwin' ? 'Alt+Cmd+I' : 'Alt+Shift+I',
+          click: () => {
+            that.createWindow('AboutWindow.js', 800, 600, false, false)
+
+          }
+        },
+        {
+          label: 'Exit',
+          role: 'quit',
+          accelerator: process.platform === 'darwin' ? 'Ctrl+Cmd+I' : 'Ctrl+W',
+          click: () => { that.ExitApp(); }
+        },
+      ]
+    }))
+    Menu.setApplicationMenu(menu)
+  }
+
   private static async getFiles(dir: string): Promise<Array<string>> {
-    var flist: Array<string> = new Array<string>();
-    var fq: string = path.join(MainProcess.appPath(), dir);
+    let flist: Array<string> = new Array<string>();
+    let fq: string = path.join(MainProcess.appPath(), dir);
     const files: any = await fs.readdir(fq);
     for (const file of files) {
       flist.push(file);
     }
     return flist;
+
   }
   private static appPath(): string {
     //This will need to change vs debug / release
     //also __dirname
     return path.join(app.getAppPath(), '/dist');
   }
+  private static registerCallbacks(): void {
+    ipcMain.handle(RPCMethods.openFolderDialog, async (event, arg) => {
+      const { canceled, filePaths } = await dialog.showOpenDialog(MainProcess.mainWindow());
+      if (canceled) {
+        return;
+      } else {
+        return filePaths[0]
+      }
+    });
+    ipcMain.handle(RPCMethods.path_join, async (event, arg) => {
+      return path.join(arg[0], arg[1]);
+    });
+    ipcMain.handle(RPCMethods.fs_access, async (event, arg) => {
+      try {
+        await fs.access(arg[0], arg[1]);
+        return true;
+      }
+      catch {
+        return false;
+      }
+    });
+    ipcMain.handle(RPCMethods.fs_readFile, async (event, arg) => {
+      try {
+        const { buffer } = await fs.readFile(arg[0]);
+        //In order to passa buffer to/from the main process you either need to serialize or use electron.remote .. ugh
+        //https://github.com/electron/electron/issues/2104
+        //https://github.com/electron/electron/issues/9509  
+//        console.log(buffer);
+        var xy = Buffer.from(buffer);//what the actual
+        // console.log(xy);
+        // var x2 = (xy as Uint8Array).buffer;//what the actual
+        // console.log(x2);
+
+        return xy;
+      }
+      catch (ex){
+        console.log(ex);
+        return null;
+      }
+    });
+    ipcMain.handle(RPCMethods.fs_readdir, async (event, arg) => {
+      try {
+        const files = await fs.readdir(arg[0]);
+        return files;
+      }
+      catch (err) {
+        console.log(err);
+        return []; //no files.
+      }
+    });
+    ipcMain.handle(RPCMethods.process_cwd, async (event, arg) => {
+      return process.cwd();
+    });
+  }
+
 }
 
-
-var m: MainProcess;
-
+let _mainProcess: MainProcess;
 
 app.on('ready', () => {
-  m = new MainProcess();
+  _mainProcess = new MainProcess();
 });
 app.on('window-all-closed', () => {
-  if (m) {
-    m.ExitApp();
+  if (_mainProcess) {
+    _mainProcess.ExitApp();
   }
 });
+
+export { _mainProcess };

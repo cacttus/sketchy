@@ -81,9 +81,9 @@ render.entry = {
 ..
 ```
 
-## Building .EXE, .AppImg, .RPM, etc
+## Bundling  (.exe, .appimage, .rpm, .deb, etc.)
 
-To bundle the application into an EXE / RPM / AppImage run
+To bundle the application into an .exe, .rpm, .deb, .AppImage, or other standalone format run:
 
 `npx electron-builder`
 

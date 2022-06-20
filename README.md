@@ -9,7 +9,9 @@ into a single EXE, DEB, RPM or AppImage. This was designed to be an easy way to 
 (Using: Nodejs, Electron, Typescipt, jquery, React, Bootstrap, Webpack)
 
 ## Building
-Install Nodejs via cURL (Linux) or download (Windows). (I could not get this to work using the Linux package manager version of Node.)
+Install Nodejs via cURL (Linux) or download (Windows). 
+
+* (Note: The Linux package manager version of Node may be out of date.)
 
 If you're new to NPM, it installs all the dependencies by simply navigating to this project folder and running
 

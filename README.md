@@ -40,20 +40,30 @@ import ElectronWindow from './ElectronWindow';
 import Remote from './Remote';
 
 export class MyWindow extends ElectronWindow {
-  public constructor(){
+  
+  public constructor() {
     super();
   }
+  
+  protected override title() : string { return "MyWindow!"; }
+  protected override width() : number { return "800"; }
+  protected override height() : number { return "600"; }
   protected override render() : JSX.Element {
     return (
       <div>Hello Window!</div>
     );
   }
-  private MyCreateChildWindow() : void { 
+  
+  private myCreateChildWindow() : void { 
+    Remote.createWindow("MyChildWindow.js");
+    //Another way
     Remote.createWindowDetails("MyWindow", "MyWindow.js", 800, 600, true);
   }
-  private ReadFile() : Promise<Buffer> { 
-    Remote.fs_readFile("myFile.txt");
+  
+  private myReadFile() : Promise<Buffer> { 
+    return Remote.fs_readFile("myFile.txt");
   }
+
 }
 ```
 

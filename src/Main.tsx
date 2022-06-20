@@ -2,7 +2,9 @@ import { app, BrowserWindow, ipcMain, Menu, MenuItem, dialog } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { RPCMethods } from "./Remote"
-import {Blob} from 'buffer';
+import { Blob } from 'buffer';
+import { create } from 'domain';
+import { buffer } from 'stream/consumers';
 
 /**
  This is the main process code, which can be moved into the rendering thread.
@@ -16,7 +18,7 @@ class MainProcess {
   public constructor() {
     let that = this;
 
-    MainProcess._windows.push(that.createWindow('MainWindow.js', 800, 600, false, false));
+    MainProcess._windows.push(MainProcess.createWindowDetails('Sketchy', 'MainWindow.js', 800, 600, false, false));
 
     //Register RPC callbacks
     MainProcess.registerCallbacks();
@@ -24,54 +26,14 @@ class MainProcess {
     that.createMenu();
   }
 
-  public ExitApp(): void {
-    app.quit();
-  }
-  // private send(event: string, data: any = null): void {
-  //   MainProcess.mainWindow().webContents.send("fromMain", [event, data]);
-  // }
-  // private receive(func: any): void {
-  //   ipcMain.on("toMain", (event: Electron.IpcMainEvent, args: any) => {
 
-  //     var rpcName: string = args[0]; // The name of the RPC method
-  //     var rpcArgs: any = args[1]; // The arguments
-
-  //     console.log("Main:" + rpcName);
-
-  //     func(rpcName, rpcArgs);
-  //   });
-  // }
-  // private handleEvents(rpcName: string, rpcArgs: any): void {
-  //   var that = this;
-
-  //   /* @ts-ignore */
-  //   var fid: any = that[rpcName];
-  //   fid(rpcArgs);
-
-  //   if (MainProcess.checkEvent(Events.GetFiles, 1, rpcName, rpcArgs)) {
-  //     var f = MainProcess.getFiles(rpcArgs[0]).then((value: Array<string>) => {
-  //       that.send(Events.GetFiles, value);
-  //     });
-  //   }
-  //   else if (MainProcess.checkEvent(Events.ExitApp, 0, rpcName, rpcArgs)) {
-  //     MainProcess.mainWindow().close();
-  //   }
-  // }
-  // private static checkEvent(rpcName: string, argcount: number, got_name: string, got_args: any): boolean {
-  //   var b: boolean = false;
-  //   if (rpcName.localeCompare(got_name) == 0) {
-  //     b = true;
-  //     if (((got_args === null || got_args === undefined) && argcount > 0) || (got_args && got_args.length !== argcount)) {
-  //       throw new Error("Event " + got_name + " had " + got_args.length + " args, needed " + argcount);
-  //     }
-  //   }
-  //   return b;
-  // }
-  private createWindow(jsFile: string, width: number = 800, height: number = 600, fullscreen: boolean = false, is_modal: boolean = false): BrowserWindow {
-    let that = this;
+  public static createWindowDetails(titlef: string, jsFile: string, width: number = 800, height: number = 600, fullscreen: boolean = false, is_modal: boolean = false): BrowserWindow {
     let bw: BrowserWindow;
 
+    console.log("New window: " + jsFile);
+
     bw = new BrowserWindow({
+      title: titlef,
       height: height,
       width: width,
       fullscreen: fullscreen,
@@ -82,6 +44,7 @@ class MainProcess {
       minimizable: is_modal ? true : false,
       maximizable: is_modal ? true : false,
       fullscreenable: is_modal ? true : false,
+      show: false, //Initially hide the window. This is for setting the window's custom properties or else it would animate.
       //frame:false,//hides frame.
       webPreferences: {
         devTools: true,
@@ -91,22 +54,45 @@ class MainProcess {
         //enableRemoteModule: false /*  */
       }
     });
+    const fname = path.basename(jsFile);
+    const ext = path.extname(jsFile);
+    const className = path.basename(fname, ext);
 
     //Dynamcially load the index file,then dynamically load the script.
     //Simply sending text/html to the window doesn't work in Electron. If it did, we could get rid of the HTML file alltogther.
-    bw.loadFile(path.join(MainProcess.appPath(), "index.html"));
+    let indexFileName = "index.html";
+    let indexFileloc = path.join(MainProcess.appPath(), indexFileName);
+    console.log(indexFileName + " location: " + indexFileloc);
+    bw.loadFile(indexFileloc);
+
+    //Dynamically create the window js file.
+    var nl = "\n";
     bw.webContents.once('dom-ready', () => {
+      console.log("Server:Creating window: " + jsFile + " class: " + className + " id: " + bw.id);
       bw.webContents.executeJavaScript(
-        " var s = document.createElement('script'); " +
-        " s.type = 'text/javascript'; " +
-        " s.src = '" + jsFile + "';  " +
-        " document.body.appendChild(s); " +
+        " console.log(\"Window: " + jsFile + "\"); " + nl +
+        " var ___winTypeStr = '" + className + "';" + nl +
+        " var ___winID = " + bw.id + ";" + nl +
+        " var ___win = undefined; " + nl +
+        " var s = document.createElement('script'); " + nl +
+        " s.type = 'text/javascript'; " + nl +
+        " s.src = '" + jsFile + "';  " + nl +
+        " document.body.appendChild(s); " + nl +
+        " s.onload = function(){" + nl +
+        "   console.log(\"Exported Webpack App is: \"); " + nl +
+        "   console.log(ElectronApp); " + nl +
+        "   ___win = new ElectronApp." + className + ";" + nl +
+        " }; " + nl +
         ""
       );
     });
 
     return bw;
   };
+  public ExitApp(): void {
+    app.quit();
+  }
+
   private createMenu(): void {
     let that = this;
     const menu = new Menu()
@@ -128,15 +114,14 @@ class MainProcess {
           accelerator: 'F12',
           click: () => { MainProcess.mainWindow().webContents.openDevTools(); }
         },
-        {
-          label: 'About',
-          role: 'about',
-          accelerator: process.platform === 'darwin' ? 'Alt+Cmd+I' : 'Alt+Shift+I',
-          click: () => {
-            that.createWindow('AboutWindow.js', 800, 600, false, false)
-
-          }
-        },
+        // {
+        //   // label: 'About',
+        //   // role: 'about',
+        //   // accelerator: process.platform === 'darwin' ? 'Alt+Cmd+I' : 'Alt+Shift+I',
+        //   // click: () => {
+        //   //   MainProcess.createWindow('AboutWindow.js', 800, 600, false, false)
+        //   // }
+        // },
         {
           label: 'Exit',
           role: 'quit',
@@ -147,7 +132,6 @@ class MainProcess {
     }))
     Menu.setApplicationMenu(menu)
   }
-
   private static async getFiles(dir: string): Promise<Array<string>> {
     let flist: Array<string> = new Array<string>();
     let fq: string = path.join(MainProcess.appPath(), dir);
@@ -156,7 +140,6 @@ class MainProcess {
       flist.push(file);
     }
     return flist;
-
   }
   private static appPath(): string {
     //This will need to change vs debug / release
@@ -190,15 +173,11 @@ class MainProcess {
         //In order to passa buffer to/from the main process you either need to serialize or use electron.remote .. ugh
         //https://github.com/electron/electron/issues/2104
         //https://github.com/electron/electron/issues/9509  
-//        console.log(buffer);
+        //        console.log(buffer);
         var xy = Buffer.from(buffer);//what the actual
-        // console.log(xy);
-        // var x2 = (xy as Uint8Array).buffer;//what the actual
-        // console.log(x2);
-
         return xy;
       }
-      catch (ex){
+      catch (ex) {
         console.log(ex);
         return null;
       }
@@ -216,6 +195,51 @@ class MainProcess {
     ipcMain.handle(RPCMethods.process_cwd, async (event, arg) => {
       return process.cwd();
     });
+
+    ipcMain.handle(RPCMethods.createWindowDetails, async (event, arg) => {
+      let bw: BrowserWindow = MainProcess.createWindowDetails(arg[0], arg[1], arg[2], arg[3], arg[4], false);
+      return bw.id;
+    });
+    ipcMain.handle(RPCMethods.createWindow, async (event, arg) => {
+      let bw: BrowserWindow = MainProcess.createWindowDetails("no-title", arg[0], 10, 10, false, false);
+      return bw.id;
+    });
+    ipcMain.handle(RPCMethods.setTitle, async (event, arg) => {
+      try {
+        console.log("Setting window " + arg[0] + " title " + arg[1]);
+        var bw = BrowserWindow.fromId(arg[0]);
+        bw.setTitle(arg[1]);
+      }
+      catch (ex) {
+        console.log(ex);
+      }
+    });
+    ipcMain.handle(RPCMethods.setSize, async (event, arg) => {
+      try {
+        console.log("Setting window " + arg[0] + " size " + arg[1] + "," + arg[2]);
+        var bw = BrowserWindow.fromId(arg[0]);
+        bw.setSize(arg[1], arg[2]);
+      }
+      catch (ex) {
+        console.log(ex);
+      }
+    });
+    ipcMain.handle(RPCMethods.showWindow, async (event, arg) => {
+      try {
+        console.log("Show window " + arg[0] + " : " + arg[1]);
+        var bw = BrowserWindow.fromId(arg[0]);
+        if (arg[1]) {
+          bw.show();
+        }
+        else {
+          bw.hide();
+        }
+      }
+      catch (ex) {
+        console.log(ex);
+      }
+    });
+
   }
 
 }

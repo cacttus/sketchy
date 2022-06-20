@@ -8,7 +8,6 @@ mkdir -p dist
 cp -u -r ./testdata ./dist/testdata
 cp -u ./src/index.html ./dist/index.html 
 cp -u ./src/preload.js ./dist/preload.js 
-echo ...webpack render
-webpack --config ./webpack.config.render.js --mode development 
-echo ...webpack main
-webpack --config ./webpack.config.main.js --mode development
+cp -u ./src/require.js ./dist/require.js 
+echo ...compile
+webpack --config ./webpack.config.js --mode development 

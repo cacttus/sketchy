@@ -13,13 +13,9 @@
       "windows": {
         "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd"
       },
-      "args" : ["."],
+      "args" : ["--trace-warnings", "." ],
       "outputCapture": "std",
       "preLaunchTask": "node-webpack-build"
-      // "skipFiles": [
-      //   "<node_internals>/**"
-      // ],
-      // "program": "${workspaceFolder}/dist/main.js"
     }
   ]
 }

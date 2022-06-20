@@ -1,32 +1,41 @@
 
-### Install, build, run
-npm install
-npm run build
-npm run start
 
-## AppImg/RPM/EXE build
-in main folder .. 
-* npx electron-builder
+
+# Sketchy
+
+This is an example of a desktop only electron app that contains server-side (native) control logic on the client. The application can be packaged
+into a single EXE, DEB, RPM or AppImage. This was designed to be an easy way to make desktop apps in JS, which mimicks the .NET framework, but has the visual power of React and Chromium.
+
+(Using: Nodejs, Electron, Typescipt, jquery, React, Bootstrap, Webpack)
+
+## Usage
+To create a new window implement ElectronWindow.tsx and override render() to create the window contents.
+As of now, you must add a new window .tsx to webpack.config. (make this automatic in the future.)
+You can access the filesystem, and other server-side things using `Remote`.
+
+`import Remote from './Remote`
+`Remote.createWindowDetails("MyWindow", "MyWindow.js", 800, 600, true);`
+
+
+## Building and Installation
+Install Nodejs via cURL (Linux) or download (Windows). (I could not get this to work using the Linux package manager version of Node.)
+
+If you're new to NPM, it installs all the dependencies by simply navigating to this project folder and running
+
+`npm install`
+
+VSCode is set up so that F5 should build and run the project, or by running `build-dev.sh` manually in sh (or cygwin/mingw for Windows).
+
+`npm run build-dev`
+
+Electron needs to be invoked in order for the application to run (note the '.')
+
+`npm run electron .`
+
+### Building a Standalone: AppImg/RPM/EXE
+
+To build the applciation to an EXE / RPM / AppImage run
+
+`npx electron-builder`
 
 TODO: make a release script that runs electron-builder.
-
-### Additional Info
-npx electron .
-npx webpack-cli build --c main.webpack.js 
-npx webpack-cli build --c render.webpack.js 
-npx webpack-dev-server
-npm start
-
-We are not using the create-raect-app thing so no react-scripts are used
-instead we are using webpack manually to compile typescript and then electron-forge to bundle electron into an exe
-We bundle everything with webpack which, of course, uses ts-loader (i.e. tsc) to compile the typescript tsx files.
-WP bundles it all into /dist  NOTE the webpack config file defines development or production - this will determine if code is minified.
-Electron uses the package.json 's main configuration to locate the bundle we compiled with webpack.
-It simply encloses it in the electron container and we're good to go - for dev.
-For release builds electron-forge uses the same to push everything into a .deb, or, .exe
-
-### Extra Install Instructions
-Note install nodejs from CURL on linux
-Install NPM
-DL this
-run npm install

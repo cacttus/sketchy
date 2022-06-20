@@ -1,16 +1,29 @@
 //NOTE: https://stackoverflow.com/questions/48476061/electron-and-typescript-fs-cant-be-resolved
 //https://dev.to/riddhiagrawal001/create-react-app-without-create-react-app-2lgd
 //https://www.geeksforgeeks.org/hot-reload-in-electronjs/
+
 const webpack = require("webpack");
 const path = require("path");
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const _ = require('lodash');
 
-module.exports = {
+// import webpack from 'webpack';
+// import path from "path";
+// import _ from 'lodash';
+// import { dirname } from 'path'
+// import { fileURLToPath } from 'url'
+// const __filename = fileURLToPath(import.meta.url)
+// const __dirname = dirname(__filename)
+
+
+//This is a quick way to have multiple webpack configurations in one go of webpack.
+var template = {
   //mode: 'development', //'development' or 'production' will minify the code
-  mode: "development",
-  entry: path.resolve(__dirname, "./src/MainWindow.tsx"),
-  target: 'electron-renderer',
-  devtool: 'eval-source-map',
+  entry: {
+  },
+  //path.resolve(__dirname, "./src/Main.tsx"),
+  target: '',
+  devtool: 'source-map',
   stats: 'normal',
   module: {
     rules: [
@@ -21,6 +34,10 @@ module.exports = {
       {
         test: /\.css$/,
         use: ["style-loader", "css-loader"],
+      },
+      {
+        test: /\.scss$/,
+        loader: 'sass-loader' // 将 Sass 编译成 CSS
       },
       {
         test: /\.png|svg|jpg|gif$/,
@@ -44,9 +61,14 @@ module.exports = {
   },
   output: {
     path: path.resolve(__dirname, "./dist"),
-    filename: "MainWindow.js",
+    filename: "[name].js",
     publicPath: "/assets/",
-    clean: false
+    clean: false,
+    library: {
+      type: 'var',
+      name:'ElectronApp' //Very important so that we can expose client side controls and create components at runtime.
+    }
+
   },
   plugins: [],
   devServer: {
@@ -60,3 +82,23 @@ module.exports = {
 
   }
 };
+
+//Render Process
+var render = _.cloneDeep(template);//I'm not sure why json.parse/stringify isn't working. If we get that to work, remove lodash 
+
+//We should be able to do this without manually speicfying files.
+//Maybe use directories instead
+render.entry = {
+  MainWindow: path.resolve(__dirname, "./src/MainWindow.tsx"),
+  AboutWindow: path.resolve(__dirname, "./src/AboutWindow.tsx"),
+};
+render.target = 'electron-renderer';
+
+//Main process
+var main = _.cloneDeep(template);
+main.entry = {
+  Main: path.resolve(__dirname, "./src/Main.tsx"),
+};
+main.target = 'electron-main';
+
+module.exports = [render, main];

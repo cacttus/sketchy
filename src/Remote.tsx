@@ -2,11 +2,16 @@
 export class RPCMethods {
   public static test: string = "test";
   public static openFolderDialog: string = "openFolderDialog";
+  public static createWindow: string = "createWindow";
+  public static createWindowDetails: string = "createWindowDetails";
   public static path_join: string = "path_join";
   public static fs_access: string = "fs_access";
   public static fs_readFile: string = "fs_readFile";
   public static fs_readdir: string = "fs_readdir";
   public static process_cwd: string = "process_cwd";
+  public static setTitle: string = "setTitle";
+  public static setSize: string = "setSize";
+  public static showWindow: string = "showWindow";
 
 }
 
@@ -60,6 +65,21 @@ export class Remote {
   public static process_cwd(): Promise<string> {
     return (window as any).api.callSync(RPCMethods.process_cwd);
   }
-
-
+  public static createWindow2(title: string, jsFile: string, width: number = 800, height: number = 600, fullscreen: boolean = false): Promise<number> {
+    //Returns the window id
+    return (window as any).api.callSync(RPCMethods.createWindowDetails, title, jsFile, width, height, fullscreen);
+  }
+  public static createWindow(jsFile: string): Promise<number> {
+    //Returns the window id
+    return (window as any).api.callSync(RPCMethods.createWindow, jsFile);
+  }
+  public static setTitle(winID : number, title:string): Promise<void> {
+    return (window as any).api.callSync(RPCMethods.setTitle, winID, title);
+  }
+  public static setSize(winID : number, w:number,h:number): Promise<void> {
+    return (window as any).api.callSync(RPCMethods.setSize, winID, w,h);
+  }
+  public static showWindow(winID : number, show:boolean): Promise<void> {
+    return (window as any).api.callSync(RPCMethods.showWindow, winID, show);
+  }
 }

@@ -3,7 +3,8 @@
   "productName": "sketchy",
   "version": "1.0.0",
   "description": "My Electron application description.",
-  "main": "./dist/main.js",
+  "main": "./dist/Main.js",
+  "type":"commonjs",
   "scripts": {
     "lint": "eslint --ext .tsx --ext .ts .",
     "build-dev": "./build-dev.sh",
@@ -18,7 +19,7 @@
     "appId": "com.example.app",
     "files": [
       "./dist/**/*",
-      "./dist/main.js"
+      "./dist/Main.js"
     ],
     "linux": {
       "target": [
@@ -59,6 +60,7 @@
     }
   },
   "devDependencies": {
+    "@popperjs/core": "^2.11.5",
     "@svgr/webpack": "^6.2.1",
     "@types/jquery": "^3.5.14",
     "@types/node": "^16.11.36",
@@ -71,9 +73,12 @@
     "eslint-webpack-plugin": "^3.1.1",
     "file-loader": "^6.2.0",
     "html-webpack-plugin": "^5.5.0",
+    "lodash": "^4.17.21",
+    "node-sass": "^7.0.1",
     "react": "^18.1.0",
     "react-dom": "^18.1.0",
     "react-svg-loader": "^3.0.3",
+    "sass-loader": "^13.0.0",
     "style-loader": "^3.3.1",
     "svg-url-loader": "^7.1.1",
     "ts-loader": "^9.3.0",

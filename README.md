@@ -72,10 +72,9 @@ As of now, you must add your `Window.tsx` to `webpack.config.js` (make this auto
 ```
 render.entry = {
   MyWindow: path.resolve(__dirname, "./src/YourWindow.tsx"),
+  //...other windows
 };
 ```
-
-
 
 ## Building a Standalone EXE, AppImg, RPM (etc)
 

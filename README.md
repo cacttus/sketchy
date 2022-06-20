@@ -70,10 +70,13 @@ export class MyWindow extends ElectronWindow {
 As of now, you must add your `Window.tsx` to `webpack.config.js` (make this automatic in the future.)
 
 ```
+//webpack.config.js..
+..
 render.entry = {
   MyWindow: path.resolve(__dirname, "./src/YourWindow.tsx"),
   //...other windows
 };
+..
 ```
 
 ## Building a Standalone EXE, AppImg, RPM (etc)

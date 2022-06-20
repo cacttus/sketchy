@@ -11,7 +11,7 @@ into a single EXE, DEB, RPM or AppImage. This was designed to be an easy way to 
 ## Building
 Install Nodejs via cURL (Linux) or download (Windows). 
 
-* _Note: The Linux package manager version of Node may be out of date._
+* _Note: The Linux package version of Node may be out of date, depending on your distro._
 
 If you're new to NPM, it installs all the dependencies by simply navigating to this project folder and running
 

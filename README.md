@@ -11,7 +11,7 @@ into a single EXE, DEB, RPM or AppImage. This was designed to be an easy way to 
 ## Building
 Install Nodejs via cURL (Linux) or download (Windows). 
 
-* (Note: The Linux package manager version of Node may be out of date.)
+* _Note: The Linux package manager version of Node may be out of date._
 
 If you're new to NPM, it installs all the dependencies by simply navigating to this project folder and running
 
@@ -31,7 +31,7 @@ To create a new window implement `ElectronWindow` and override virtual methods
 
 `render()` specifically will return the contents of your window as a JSX element.
 
-* Note that the ElectronWindow actually wraps the window contents inside a react Root element and bootstrap element. The bootstrap flex box has full-screen width, zero padding, and sizes proportionally to the window.
+* _Note that the ElectronWindow actually wraps the window contents inside a react Root element and bootstrap element. The bootstrap flex box has full-screen width, zero padding, and sizes proportionally to the window._
 
 As of now, you must add a new window .tsx to webpack.config. (make this automatic in the future.)
 

@@ -36,19 +36,19 @@ You can access the filesystem, and other server-side things using `Remote`.
 ```
 import ElectronWindow from './ElectronWindow';
 import Remote from './Remote';
-...
+
 export class MyWindow extends ElectronWindow {
-...
+  public constructor(){
+    super();
+  }
   protected override render() : JSX.Element {
     return (
       <div>Hello Window!</div>
     );
   }
-...
   private MyCreateChildWindow() : void { 
     Remote.createWindowDetails("MyWindow", "MyWindow.js", 800, 600, true);
   }
-...
   private ReadFile() : Promise<Buffer> { 
     Remote.fs_readFile("myFile.txt");
   }

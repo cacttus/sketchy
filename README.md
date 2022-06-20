@@ -29,7 +29,7 @@ Electron needs to be invoked in order for the application to run (note the '.')
 
 ## Creating an App
 
-To create a new window implement `ElectronWindow` and override virtual methods 
+To create a new window implement `ElectronWindow` and override the virtual methods in that class. 
 
 `render()` specifically will return the contents of your window as a JSX element.
 

@@ -57,9 +57,9 @@ export class MyWindow extends ElectronWindow {
 
 
 
-### Building a Standalone EXE, AppImg, RPM (etc)
+## Building a Standalone EXE, AppImg, RPM (etc)
 
-To build the applciation to an EXE / RPM / AppImage run
+To bundle the application into an EXE / RPM / AppImage run
 
 `npx electron-builder`
 

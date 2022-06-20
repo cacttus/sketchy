@@ -67,7 +67,9 @@ export class MyWindow extends ElectronWindow {
 }
 ```
 
-As of now, you must add your `Window.tsx` to `webpack.config.js` (make this automatic in the future.)
+As of now, you must add your `Window.tsx` to `webpack.config.js` 
+
+_TODO: make this automatic in the future._
 
 ```
 //webpack.config.js..
@@ -79,12 +81,16 @@ render.entry = {
 ..
 ```
 
-## Building a Standalone EXE, AppImg, RPM (etc)
+## Building .EXE, .AppImg, .RPM, etc
 
 To bundle the application into an EXE / RPM / AppImage run
 
 `npx electron-builder`
 
-TODO: make a release script that runs electron-builder.
+You can configure electron-builder in the `build` property within `package.json`. 
+
+See the documentation for [electron-builder](https://www.electron.build/) for more info.
+
+_TODO: make a release script that runs electron-builder._
 
 

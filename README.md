@@ -55,7 +55,7 @@ export class MyWindow extends ElectronWindow {
 }
 ```
 
-As of now, you must add a new window .tsx to webpack.config. (make this automatic in the future.)
+As of now, you must add your `Window.tsx` to `webpack.config.js` (make this automatic in the future.)
 
 ```
 render.entry = {

@@ -4,7 +4,7 @@
 # Sketchy
 
 This is an example of a desktop only electron app that contains server-side (native) control logic on the client. The application can be packaged
-into a single EXE, DEB, RPM or AppImage. This was designed to be an easy way to make desktop apps in JS, which mimicks the .NET framework, but has the awesome power of React, Chromium and Bootstrap/Mui (or, whatever UI you want!).
+into a single EXE, DEB, RPM or AppImage. This was designed to be an easy way to make desktop apps in JS. It attempts to be like the .NET framework, but is completely cross-platform, and has the awesome power of React and Chromium.
 
 (Using: Nodejs, Electron, Typescipt, jquery, React, Bootstrap, Webpack)
 

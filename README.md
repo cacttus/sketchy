@@ -17,7 +17,9 @@ If you're new to NPM, it installs all the dependencies by simply navigating to t
 
 `npm install`
 
-VSCode is set up so that F5 should build and run the project, or by running `build-dev.sh` manually in sh (or cygwin/mingw for Windows).
+VSCode is set up so that F5 should build and run the project.
+
+This can be run manually with `build-dev.sh` or in node via 
 
 `npm run build-dev`
 

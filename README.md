@@ -33,8 +33,22 @@ As of now, you must add a new window .tsx to webpack.config. (make this automati
 
 You can access the filesystem, and other server-side things using `Remote`.
 
-`import Remote from './Remote';
-Remote.createWindowDetails("MyWindow", "MyWindow.js", 800, 600, true);`
+```
+import Remote from './Remote';
+...
+export class MyWindow extends ElectronWindow {
+...
+  protected override render() : JSX.Element {
+    return (
+      <div>Hello Window!</div>
+    );
+  }
+...
+  private MyCreateChildWindow() : void { 
+    Remote.createWindowDetails("MyWindow", "MyWindow.js", 800, 600, true);
+  }
+}
+```
 
 
 

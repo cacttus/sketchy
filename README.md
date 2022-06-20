@@ -7,8 +7,6 @@ This is an example of a desktop only electron app that contains server-side (nat
 into a single EXE, DEB, RPM or AppImage. 
 This was designed to be an easy way to make desktop apps in JS. It attempts to be like the .NET framework, but is completely cross-platform, and has the awesome power of React and Chromium.
 
-(Using: Nodejs, Electron, Typescipt, jquery, React, Bootstrap, Webpack)
-
 ## Building
 Install Nodejs via cURL (Linux) or download (Windows). 
 
@@ -94,4 +92,4 @@ See the documentation for [electron-builder](https://www.electron.build/) for mo
 
 _TODO: make a release script that runs electron-builder._
 
-
+(Using: Nodejs, Electron, Typescipt, jquery, React, Bootstrap, Webpack)

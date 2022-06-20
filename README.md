@@ -8,7 +8,7 @@ into a single EXE, DEB, RPM or AppImage. This was designed to be an easy way to 
 
 (Using: Nodejs, Electron, Typescipt, jquery, React, Bootstrap, Webpack)
 
-## Building and Installation
+## Building
 Install Nodejs via cURL (Linux) or download (Windows). (I could not get this to work using the Linux package manager version of Node.)
 
 If you're new to NPM, it installs all the dependencies by simply navigating to this project folder and running
@@ -25,7 +25,7 @@ Electron needs to be invoked in order for the application to run (note the '.')
 
 ## Creating an App
 
-To create a new window implement ElectronWindow.tsx and override virtual methods 
+To create a new window implement `ElectronWindow` and override virtual methods 
 
 `render()` specifically will return the contents of your window as a JSX element.
 
@@ -34,6 +34,7 @@ As of now, you must add a new window .tsx to webpack.config. (make this automati
 You can access the filesystem, and other server-side things using `Remote`.
 
 ```
+import ElectronWindow from './ElectronWindow';
 import Remote from './Remote';
 ...
 export class MyWindow extends ElectronWindow {
@@ -46,6 +47,10 @@ export class MyWindow extends ElectronWindow {
 ...
   private MyCreateChildWindow() : void { 
     Remote.createWindowDetails("MyWindow", "MyWindow.js", 800, 600, true);
+  }
+...
+  private ReadFile() : Promise<Buffer> { 
+    Remote.fs_readFile("myFile.txt");
   }
 }
 ```

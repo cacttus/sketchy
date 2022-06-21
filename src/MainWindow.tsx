@@ -3,12 +3,23 @@ import ReactDOM from "react-dom/client";
 import $ from 'jquery';
 import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import * as Mousetrap from 'mousetrap';
 import { Remote } from "./Remote";
 import { ElectronWindow } from "./ElectronWindow";
 
+enum State { start, stop };
+
 export class MainWindow extends ElectronWindow {
+  private _images: Array<string> = new Array<string>();
+  private _curImgIdx: number = 0;
+  private _state: State = State.stop;
+  private _cycleTime: number = 1000; //millis -  5min
+  private _timer: any;
+  private _dataRootPath : string = './testdata';
+
   public constructor() {
     super();
+    this.registerKeys();
   }
   protected title?(): string { return "Main"; }
   protected width?(): number { return 800; }
@@ -16,7 +27,7 @@ export class MainWindow extends ElectronWindow {
   protected override render(): JSX.Element {
     let that = this;
     return (
-      
+
       <div>
         {/* <div className="row justify-content-left">
 
@@ -41,7 +52,12 @@ export class MainWindow extends ElectronWindow {
           </div> */}
 
         <div className="row justify-content-center">
-          <button className="btn btn-primary" style={{ maxWidth: '10em' }} onClick={async () => { await Remote.createWindow("AboutWindow.js"); }}>CWD:<span id="CWD"></span></button>
+          <button className="btn btn-primary" style={{ maxWidth: '10em' }} onClick={async () => {
+             await Remote.createWindow("AboutWindow.js"); 
+             }}>abotu<span id="CWD"></span></button>
+          <button className="btn btn-primary" style={{ maxWidth: '10em' }} onClick={async () => { 
+            await Remote.createWindow("SettingsWindow.js");
+             }}>settggs<span id="CWD"></span></button>
           <button className="btn btn-primary" style={{ maxWidth: '10em' }} onClick={async () => { $('#CWD').html(await Remote.process_cwd()); }}>CWD:<span id="CWD"></span></button>
           <button className="btn btn-primary" style={{ maxWidth: '10em' }} onClick={async () => {
             let fq: string = await Remote.path_join(await Remote.process_cwd(), '/testdata');
@@ -67,47 +83,106 @@ export class MainWindow extends ElectronWindow {
       </div>
     );
   }
+  private async setImage(imgFile: string) {
+    let that = this;
 
-  // private _cycleTime: number = 1000; // 5min
-  // private _timer: any;
+    let fullPath: string = await Remote.path_join(await Remote.process_cwd(), await Remote.path_join(that._dataRootPath, imgFile));
 
-  // private start(): void {
-  //   var that = this;
-  //   var i = 100;
-  //   this._timer = setInterval(() => {
-  //     i--;
-  //     if (i > 0) {
-  //       $('.progress-bar').css('width', i + '%');
-  //     } else {
-  //       clearInterval(that._timer);
-  //     }
-  //   }, 1000);
-  // }
-  // private stop(): void {
-  //   clearInterval(this._timer);
-  // }
+    await Remote.fs_access(fullPath).then(async () => {
+      await Remote.fs_readFile(fullPath).then((value: Buffer) => {
+        $("#theImage").attr("src", URL.createObjectURL(
+          new Blob([value], { type: 'image/jpg' } /* (1) */)
+        ));
+      });
+    });
+
+  }
+  private nextImage(): void {
+
+  }
+  private prevImage(): void {
+    let that = this;
+    //Prev image will stop the timer.
+    that.stop();
+    that._curImgIdx -= 1;
+    if (that._curImgIdx < 0) {
+      that._curImgIdx = 0;
+    }
+    if (that._curImgIdx >= 0 && that._curImgIdx < that._images.length) {
+      that.setImage(that._images[that._curImgIdx]);
+    }
+  }
+  private addTime(seconds: number): void {
+    let that = this;
+    that._cycleTime += seconds * 1000;
+    if (that._cycleTime < 5000) {
+      that._cycleTime = 5000;
+    }
+  }
+  private registerKeys(): void {
+    let that = this;
+    //note/windows/cmd key = meta
+    Mousetrap.bind('right', () => {
+      that.nextImage();
+    })
+    Mousetrap.bind('left', () => {
+      that.prevImage();
+    })
+    Mousetrap.bind('up', () => {
+      that.addTime(30);
+    })
+    Mousetrap.bind('down', () => {
+      that.addTime(-30);
+    })
+    Mousetrap.bind('space', () => {
+      if (that._state == State.start) {
+        that.stop();
+      }
+      else {
+        that.start();
+      }
+    })
+  }
+  private start(): void {
+    var that = this;
+    this._state = State.start;
+    var i = 100;
+    this._timer = setInterval(() => {
+      i--;
+      if (i > 0) {
+        $('.progress-bar').css('width', i + '%');
+      } else {
+        clearInterval(that._timer);
+      }
+    }, 1000);
+  }
+  private stop(): void {
+    this._state = State.stop;
+    clearInterval(this._timer);
+  }
   private randomImage(): void {
     let files: Array<string> = new Array<string>();
     MainWindow.getFiles('/testdata').then(
       (value: Array<string>) => {
         files = value;
-      }).then(async () => {
-        if (files && files.length > 0) {
+      }).then(
+        async () => {
+          if (files && files.length > 0) {
 
-          let n = Math.floor(Math.random() * files.length);
-          let file = files[n];
+            let n = Math.floor(Math.random() * files.length);
+            let file = files[n];
 
-          let fullPath: string = await Remote.path_join(await Remote.process_cwd(), await Remote.path_join('/testdata', file));
+            let fullPath: string = await Remote.path_join(await Remote.process_cwd(), await Remote.path_join('/testdata', file));
 
-          await Remote.fs_access(fullPath).then(async () => {
-            await Remote.fs_readFile(fullPath).then((value: Buffer) => {
-              $("#theImage").attr("src", URL.createObjectURL(
-                new Blob([value], { type: 'image/jpg' } /* (1) */)
-              ));
+            await Remote.fs_access(fullPath).then(async () => {
+              await Remote.fs_readFile(fullPath).then((value: Buffer) => {
+                $("#theImage").attr("src", URL.createObjectURL(
+                  new Blob([value], { type: 'image/jpg' } /* (1) */)
+                ));
+              });
             });
-          });
-        }
-      });
+          }
+        });
   }
   private static async getFiles(dir: string): Promise<Array<string>> {
     let flist: Array<string> = new Array<string>();

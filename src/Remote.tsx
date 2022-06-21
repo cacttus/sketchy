@@ -1,3 +1,4 @@
+import { Stats } from "webpack";
 
 export class RPCMethods {
   public static test: string = "test";
@@ -7,12 +8,14 @@ export class RPCMethods {
   public static path_join: string = "path_join";
   public static fs_access: string = "fs_access";
   public static fs_readFile: string = "fs_readFile";
+  public static fs_writeFile: string = "fs_writeFile";
   public static fs_readdir: string = "fs_readdir";
+  public static fs_mkdir: string = "fs_mkdir";
+  public static fs_stat: string = "fs_stat";
   public static process_cwd: string = "process_cwd";
   public static setTitle: string = "setTitle";
   public static setSize: string = "setSize";
   public static showWindow: string = "showWindow";
-
 }
 
 export class Remote {
@@ -50,7 +53,6 @@ export class Remote {
       try {
         //Should be a blob
         const buf = (val as Uint8Array).buffer;
-        console.log(buf);
         return buf;
       }
       catch (ex) {
@@ -59,8 +61,17 @@ export class Remote {
       }
     });
   }
+  public static fs_writeFile(fileLoc: string, fileContents: string): Promise<boolean> {
+    return (window as any).api.callSync(RPCMethods.fs_writeFile, fileLoc, fileContents);
+  }
+  public static fs_mkdir(dir: string): Promise<boolean> {
+    return (window as any).api.callSync(RPCMethods.fs_mkdir, dir);
+  }
   public static fs_readdir(path1: string): Promise<Array<string>> {
     return (window as any).api.callSync(RPCMethods.fs_readdir, path1);
+  }
+  public static fs_stat(path: string): Promise<Stats> {
+    return (window as any).api.callSync(RPCMethods.fs_stat, path);
   }
   public static process_cwd(): Promise<string> {
     return (window as any).api.callSync(RPCMethods.process_cwd);
@@ -73,13 +84,14 @@ export class Remote {
     //Returns the window id
     return (window as any).api.callSync(RPCMethods.createWindow, jsFile);
   }
-  public static setTitle(winID : number, title:string): Promise<void> {
+  public static setTitle(winID: number, title: string): Promise<void> {
     return (window as any).api.callSync(RPCMethods.setTitle, winID, title);
   }
-  public static setSize(winID : number, w:number,h:number): Promise<void> {
-    return (window as any).api.callSync(RPCMethods.setSize, winID, w,h);
+  public static setSize(winID: number, w: number, h: number): Promise<void> {
+    return (window as any).api.callSync(RPCMethods.setSize, winID, w, h);
   }
-  public static showWindow(winID : number, show:boolean): Promise<void> {
+  public static showWindow(winID: number, show: boolean): Promise<void> {
     return (window as any).api.callSync(RPCMethods.showWindow, winID, show);
   }
+
 }

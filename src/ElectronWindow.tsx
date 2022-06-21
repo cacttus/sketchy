@@ -5,7 +5,6 @@ import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Remote } from "./Remote";
 
-
 //The purpose of this class is to provide base methods for a client-side window
 //And to create the window in the constructor 
 export class ElectronWindow {
@@ -33,6 +32,7 @@ export class ElectronWindow {
       document.getElementById('root') as HTMLElement
     );
     var ctl = this.render();
+    //var statusbar = Controls.StatusBar();
     root.render(
       <React.StrictMode>
         <div className="container-fluid h-100">
@@ -40,6 +40,7 @@ export class ElectronWindow {
             <div className="col-12">
               {/* Your Window Controls here. */}
               {ctl}
+              {/* {statusbar} */}
             </div>
           </div>
         </div>
@@ -47,21 +48,3 @@ export class ElectronWindow {
     );
   }
 }
-// let rt: ElectronWindow;
-// $(document).ready(() => {
-//    /* @ts-ignore */
-//    console.log("Document ready, creating window of type " + ___winTypeStr)  
-//   /* @ts-ignore */
-//   rt = eval("new " + ___winTypeStr + "()");
-// });
-
-// let rt: ElectronWindow;
-// /* @ts-ignore */
-// window.createNewBoii = function(){
-//   //The window type is set as a global variable on the server.
-//   /* @ts-ignore */
-//   console.log("Document ready, creating window of type " + ___winTypeStr)
-//   /* @ts-ignore */
-//   //rt = eval(`new ${___winTypeStr}()`);
-//   rt = new window[___winTypeStr]();//eval(`new ${___winTypeStr}()`);
-// };

@@ -2,9 +2,6 @@ import { app, BrowserWindow, ipcMain, Menu, MenuItem, dialog } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { RPCMethods } from "./Remote"
-import { Blob } from 'buffer';
-import { create } from 'domain';
-import { buffer } from 'stream/consumers';
 
 /**
  This is the main process code, which can be moved into the rendering thread.
@@ -25,7 +22,6 @@ class MainProcess {
 
     that.createMenu();
   }
-
 
   public static createWindowDetails(titlef: string, jsFile: string, width: number = 800, height: number = 600, fullscreen: boolean = false, is_modal: boolean = false): BrowserWindow {
     let bw: BrowserWindow;
@@ -169,7 +165,7 @@ class MainProcess {
     });
     ipcMain.handle(RPCMethods.fs_readFile, async (event, arg) => {
       try {
-        const { buffer } = await fs.readFile(arg[0]);
+        const  buffer = await fs.readFile(arg[0]);
         //In order to passa buffer to/from the main process you either need to serialize or use electron.remote .. ugh
         //https://github.com/electron/electron/issues/2104
         //https://github.com/electron/electron/issues/9509  
@@ -184,7 +180,7 @@ class MainProcess {
     });
     ipcMain.handle(RPCMethods.fs_readdir, async (event, arg) => {
       try {
-        const files = await fs.readdir(arg[0]);
+        const files : any = await fs.readdir(arg[0]);
         return files;
       }
       catch (err) {
@@ -195,7 +191,6 @@ class MainProcess {
     ipcMain.handle(RPCMethods.process_cwd, async (event, arg) => {
       return process.cwd();
     });
-
     ipcMain.handle(RPCMethods.createWindowDetails, async (event, arg) => {
       let bw: BrowserWindow = MainProcess.createWindowDetails(arg[0], arg[1], arg[2], arg[3], arg[4], false);
       return bw.id;
@@ -239,7 +234,45 @@ class MainProcess {
         console.log(ex);
       }
     });
-
+    ipcMain.handle(RPCMethods.fs_writeFile, async (event, arg) => {
+      try {
+        await fs.writeFile(arg[0], arg[1]).then((value: void) => {
+          return true;
+        }, (reason: any) => {
+          console.log(reason);
+          return false;
+        });
+      }
+      catch (ex) {
+        console.log(ex);
+        return false;
+      }
+    });
+    ipcMain.handle(RPCMethods.fs_mkdir, async (event, arg) => {
+      try {
+        await fs.mkdir(arg[0]).then(
+          (value: void) => { 
+            return true;
+          }, 
+          (reason:any)=>{console.log(reason); 
+            return false;
+          });
+      }
+      catch (ex) {
+        console.log(ex);
+        return false;
+      }
+    });
+    ipcMain.handle(RPCMethods.fs_stat, async (event, arg) => {
+      //returns Stats, or null if DNE
+      try {
+        return await fs.stat(arg[0]);
+      }
+      catch (ex) {
+        console.log(ex);
+        return null;
+      }
+    });
   }
 
 }

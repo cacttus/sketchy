@@ -91,6 +91,7 @@ var render = _.cloneDeep(template);//I'm not sure why json.parse/stringify isn't
 render.entry = {
   MainWindow: path.resolve(__dirname, "./src/MainWindow.tsx"),
   AboutWindow: path.resolve(__dirname, "./src/AboutWindow.tsx"),
+  SettingsWindow: path.resolve(__dirname, "./src/SettingsWindow.tsx"),
 };
 render.target = 'electron-renderer';
 

@@ -7,7 +7,7 @@ import { Remote } from "./Remote";
 import { ElectronWindow } from "./ElectronWindow";
 import { Controls } from "./Controls";
 import { ConfigFile, ConfigFilePair } from "./ConfigFile";
-import { Form, Button, InputGroup, FormControl } from 'react-bootstrap';
+import { Form, Button, InputGroup, FormControl, FormLabel } from 'react-bootstrap';
 
 export class SettingsWindow extends ElectronWindow {
   private _settingsFileName: string = "settings.txt";
@@ -43,9 +43,9 @@ export class SettingsWindow extends ElectronWindow {
   protected override render(): JSX.Element {
     let that = this;
     return (
-      <Form.Group className="m-0">
+      <Form.Group className="m-3">
         <Form.Control
-          className="textFeedback"
+          className="m-3 textFeedback"
           as="textarea"
           //@ts-ignore
           rows="3"
@@ -66,26 +66,31 @@ export class SettingsWindow extends ElectronWindow {
         <Form.Label>Range</Form.Label>
         <Form.Range />
         <Button
-          className="btnFormSend"
+          className="m-3 btnFormSend"
           variant="outline-success"
         >
           Send Feedback
         </Button>
-          <InputGroup className="mb-3">
-            <InputGroup.Text id="basic-addon1">@</InputGroup.Text>
-            <FormControl
-              placeholder="Username"
-              aria-label="Username"
-              aria-describedby="basic-addon1"
-            />
-            <FormControl
+        <InputGroup className="mb-3">
+          <Form.Label>Time</Form.Label>
+          <Form.Control id="time_minuts" type="number" placeholder="3" min="0" max="100" />
+          <Form.Control id="time_seconds" type="number" placeholder="3" min="0" max="100"  />
+        </InputGroup>
+        <InputGroup className="mb-3">
+          <InputGroup.Text id="basic-addon1">@</InputGroup.Text>
+          <Form.Control
+            placeholder="Username"
+            aria-label="Username"
+            aria-describedby="basic-addon1"
+          />
+          <Form.Control
             type="number"
             placeholder="3"
             min="0"
             max="100"
-            />
+          />
 
-          </InputGroup>
+        </InputGroup>
 
       </Form.Group>
 

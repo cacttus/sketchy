@@ -83,7 +83,6 @@ render.entry = {
 ..
 ```
 
-
 ## Bundling  (.exe, .rpm, .deb, appimage,  etc.)
 
 To bundle the application into an .exe, .rpm, .deb, AppImage, or other standalone format run:

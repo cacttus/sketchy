@@ -236,6 +236,7 @@ class MainProcess {
       return bw.id;
     });
     ipcMain.handle(RPCMethods.createWindow, async (event, arg) => {
+      //This is used to allow the ElectronWindow properties to populate the window on the client.
       let bw: BrowserWindow = MainProcess.createWindowDetails("no-title", arg[0], 10, 10, false, false);
       return bw.id;
     });

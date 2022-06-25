@@ -23,7 +23,11 @@ export class ElectronWindow {
   }
 
   protected async init?(): Promise<void>; //Do async stuff here. Called after the constructor.
-
+  protected winId() { 
+    //This is an automatic constant that the main process appends to the loaded .js file.
+    /* @ts-ignore */
+    return ___winID; 
+  }
   protected title?(): string;
   protected width?(): number;
   protected height?(): number;
@@ -40,7 +44,6 @@ export class ElectronWindow {
     );
     var ctl = this.render();
     //var statusbar = Controls.StatusBar();
-
 
     root.render(
       <React.StrictMode>

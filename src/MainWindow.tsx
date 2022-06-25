@@ -8,6 +8,9 @@ import { Remote } from "./Remote";
 import { ElectronWindow } from "./ElectronWindow";
 import { Controls } from "./Controls";
 import './MaterialIcons.scss';
+import { Form, Button, InputGroup, FormControl, FormLabel, ProgressBar, Dropdown, Nav } from 'react-bootstrap';
+import 'ts-keycode-enum'
+import { Key } from "ts-keycode-enum";
 
 enum State { start, stop };
 
@@ -18,71 +21,73 @@ export class MainWindow extends ElectronWindow {
   private _cycleTime: number = 1000; //millis -  5min
   private _timer: any;
   private _dataRootPath: string = './testdata';
+  private _progress: number = 60;
 
   public constructor() {
     super();
     this.registerKeys();
   }
   public override async init(): Promise<void> {
+    let that = this;
     console.log("Main window async init: " + await Remote.process_cwd());
-
+    that.registerInput();
   }
+  private registerInput(): void {
+    let that = this;
+    window.onkeydown = (e: KeyboardEvent) => {
+      switch (e.keyCode) {
+        case Key.LeftArrow: that.prevImage(); break;
+        case Key.RightArrow: that.nextImage(); break;
+      }
+      //do not preventDefault to allow f12, etc
+    };
+  }
+
   protected title?(): string { return "Main"; }
   protected width?(): number { return 800; }
   protected height?(): number { return 600; }
   protected override render(): JSX.Element {
     let that = this;
     return (
+      <Form>
+        <Nav activeKey="/home" className="bg-light">
+          <Nav.Item className="p-1">
+            <Dropdown>
+              <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
+                File
+              </Dropdown.Toggle>
+              <Dropdown.Menu>
+                <Dropdown.Item onClick={that.randomImage}>Random Image <span className="material-icons">face</span></Dropdown.Item>
+                <Dropdown.Item onClick={async () => { await Remote.createWindow("SettingsWindow.js"); }}>Settings</Dropdown.Item>
+                <Dropdown.Item onClick={() => { Remote.closeWindow(that.winId()); }}>Exit</Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
+          </Nav.Item>
+          <Nav.Item className="p-1">
+            <Dropdown>
+              <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
+                Help
+              </Dropdown.Toggle>
+              <Dropdown.Menu>
+                <Dropdown.Item onClick={async () => { await Remote.createWindow("AboutWindow.js"); }}>About</Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
+          </Nav.Item>
+        </Nav>
 
-      <div>
-        <Controls.NumericUpDown value={0}></Controls.NumericUpDown>
-        <span className="material-icons">face</span>
-        <span className="material-icons">add_circle</span>
-        <span className="material-icons">&#xE87C;</span>
-        <div className="row justify-content-center">
-          <button className="btn btn-primary" style={{ maxWidth: '10em' }} onClick={async () => {
-            await Remote.createWindow("AboutWindow.js");
-          }}>abotu<span id="CWD"></span></button>
-          <button className="btn btn-primary" style={{ maxWidth: '10em' }} onClick={async () => {
-            await Remote.createWindow("SettingsWindow.js");
-          }}>settggs<span id="CWD"></span></button>
-          <button className="btn btn-primary" style={{ maxWidth: '10em' }} onClick={async () => { $('#CWD').html(await Remote.process_cwd()); }}>CWD:<span id="CWD"></span></button>
-          <button className="btn btn-primary" style={{ maxWidth: '10em' }} onClick={async () => {
-            let fq: string = await Remote.path_join(await Remote.process_cwd(), '/testdata');
-            let xx = await Remote.fs_readdir(fq);
-            $('#FILES').html(xx.join('<br/>'));
-          }}></button>
-          <div id="FILES"></div>
-          <button className="btn btn-primary" style={{ maxWidth: '10em' }} onClick={that.randomImage}>Random Image</button>
-          {/* <button className="btn btn-primary" style={{ maxWidth: '10em' }} onClick={that.start}>Start</button>
-            <button className="btn btn-primary" style={{ maxWidth: '10em' }} onClick={that.stop}>Stop</button> */}
-          <img id="theImage" style={{ maxWidth: '100%', height: '100%', width: 'auto', maxHeight: '100%' }}></img>
-        </div>
+        <img id="theImage" style={{ maxWidth: '100%', height: '100%', width: 'auto', maxHeight: '100%' }}></img>
 
         <div className="row justify-content-center fixed-bottom">
           <div className="col-12">
             <div className="progress" style={{ height: '.3em' }}>
-              {/* @ts-expect-error */}
-              <div className="progress-bar" style={{ height: '.3em' }} role="progressbar" aria-valuemin="0" aria-valuemax="100"></div>
+              {/* @ts-ignore */}
+              <div className="progress-bar" style={{ height: '.3em' }} role="progressbar" aria-valuenow={that._progress} aria-valuemin="0" aria-valuemax="100"></div>
             </div>
           </div>
         </div>
-
-      </div>
+      </Form>
     );
-  }
-  private async setImage(imgFile: string) {
-    let that = this;
 
-    let fullPath: string = await Remote.path_join(await Remote.process_cwd(), await Remote.path_join(that._dataRootPath, imgFile));
-
-    await Remote.fs_access(fullPath).then(async () => {
-      await Remote.fs_readFile(fullPath).then((value: Buffer) => {
-        $("#theImage").attr("src", URL.createObjectURL(
-          new Blob([value], { type: 'image/jpg' } /* (1) */)
-        ));
-      });
-    });
 
   }
   private nextImage(): void {

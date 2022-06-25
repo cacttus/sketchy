@@ -20,14 +20,15 @@ If you're new to NPM, it installs all the dependencies by simply navigating to t
 
 VSCode is set up so that F5 should build and run the project.
 
-The project can also be run manually with `build-dev.sh`, or in node via 
+Then, in a terminal window, in the sketchy folder run: 
 
-`npm run build-dev`
+`npx webpack -w --mode=development --config=./webpack.config.js`
 
-Electron needs to be invoked in order for the application to run (note the '.')
+This is far faster than using a .sh script, as webpack is optimized to run in watch (-w) mode.
 
-`npm run electron .`
+To run use `F5` in vscode, or `npm run electron .` in a terminal window.
 
+Note that since windows are dynamic modules, closing, and re-opening a window will effectively re-load it.
 
 ## Creating an App
 

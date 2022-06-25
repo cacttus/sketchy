@@ -6,7 +6,7 @@ const webpack = require("webpack");
 const path = require("path");
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const _ = require('lodash');
-
+const CopyPlugin = require("copy-webpack-plugin");
 // import webpack from 'webpack';
 // import path from "path";
 // import _ from 'lodash';
@@ -23,13 +23,19 @@ var template = {
   },
   //path.resolve(__dirname, "./src/Main.tsx"),
   target: '',
-  devtool: 'source-map',
+  devtool: 'source-map', ///cheap-source-map is faster
   stats: 'normal',
   module: {
     rules: [
       {
         test: /\.tsx?/,
-        use: [{ loader: 'ts-loader', options: { onlyCompileBundledFiles: true } }]
+        use: [{
+          loader: 'ts-loader',
+          options: {
+            onlyCompileBundledFiles: true,
+           // transpileOnly: true, //Note:turns off type checking for webpack performance
+          }
+        }]
       },
       {
         test: /\.(sa|sc|c)ss$/,
@@ -41,7 +47,7 @@ var template = {
       },
       {
         //this took a while to figure out ugh.
-         test: /\.(jpg|jpeg|png|woff|woff2|eot|ttf|svg)$/,
+        test: /\.(jpg|jpeg|png|woff|woff2|eot|ttf|svg)$/,
         type: 'asset/resource',
         dependency: { not: ['url'] },
       },
@@ -63,7 +69,21 @@ var template = {
     }
 
   },
-  plugins: [],
+  plugins: [
+    new CopyPlugin({
+      patterns: [
+        { from: './testdata/*', to: './' },
+        { from: './src/index.html', to: './index.html' },
+        { from: './src/preload.js', to: './preload.js' },
+        { from: './src/require.js', to: './require.js' },
+        { from: './src/bootstrap-datetimepicker.js', to: './bootstrap-datetimepicker.js' },
+        { from: './src/bootstrap-datetimepicker.css', to: './bootstrap-datetimepicker.css' },
+        { from: './src/icon.ico', to: './icon.ico' },
+        { from: './src/icon.png', to: './icon.png' },
+      ],
+    }),
+
+  ],
   // devServer: {
   //   host: "localhost",
   //   hot: true,

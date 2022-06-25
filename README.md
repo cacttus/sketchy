@@ -7,7 +7,9 @@ This is an example of a desktop only electron app that contains server-side (nat
 into a single EXE, DEB, RPM or AppImage. 
 This was designed to be an easy way to make desktop apps in JS. It attempts to be like the .NET framework, but is completely cross-platform, and has the awesome power of React and Chromium.
 
+
 ## Building
+
 Install Nodejs via cURL (Linux) or download (Windows). 
 
 * _Note: The Linux package version of Node may be out of date, depending on your distro._
@@ -25,6 +27,7 @@ The project can also be run manually with `build-dev.sh`, or in node via
 Electron needs to be invoked in order for the application to run (note the '.')
 
 `npm run electron .`
+
 
 ## Creating an App
 
@@ -79,6 +82,7 @@ render.entry = {
 };
 ..
 ```
+
 
 ## Bundling  (.exe, .rpm, .deb, appimage,  etc.)
 

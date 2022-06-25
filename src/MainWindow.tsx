@@ -6,6 +6,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import * as Mousetrap from 'mousetrap';
 import { Remote } from "./Remote";
 import { ElectronWindow } from "./ElectronWindow";
+import { Controls } from "./Controls";
+import './MaterialIcons.scss';
 
 enum State { start, stop };
 
@@ -15,11 +17,15 @@ export class MainWindow extends ElectronWindow {
   private _state: State = State.stop;
   private _cycleTime: number = 1000; //millis -  5min
   private _timer: any;
-  private _dataRootPath : string = './testdata';
+  private _dataRootPath: string = './testdata';
 
   public constructor() {
     super();
     this.registerKeys();
+  }
+  public override async init(): Promise<void> {
+    console.log("Main window async init: " + await Remote.process_cwd());
+
   }
   protected title?(): string { return "Main"; }
   protected width?(): number { return 800; }
@@ -29,35 +35,17 @@ export class MainWindow extends ElectronWindow {
     return (
 
       <div>
-        {/* <div className="row justify-content-left">
-
-            <strong id="filePath">(none yet..)</strong>
-            <button className="btn" type="button" onClick={
-              async () => {
-                let x = await Remote.openFolderDialog("./");
-                $('#filePath').html(x);
-              }}>Open folder</button>
-            <button className="btn" type="button" onClick={() => { }}>Exit</button>
-            <div className="dropdown">
-              <button className="btn btn-dark btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                Dropdown button
-              </button>
-              <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                <a className="dropdown-item" href="#">Action</a>
-                <a className="dropdown-item" href="#">Another action</a>
-                <div className="dropdown-divider"></div>
-                <a className="dropdown-item" href="#">Something else here</a>
-              </div>
-            </div>
-          </div> */}
-
+        <Controls.NumericUpDown value={0}></Controls.NumericUpDown>
+        <span className="material-icons">face</span>
+        <span className="material-icons">add_circle</span>
+        <span className="material-icons">&#xE87C;</span>
         <div className="row justify-content-center">
           <button className="btn btn-primary" style={{ maxWidth: '10em' }} onClick={async () => {
-             await Remote.createWindow("AboutWindow.js"); 
-             }}>abotu<span id="CWD"></span></button>
-          <button className="btn btn-primary" style={{ maxWidth: '10em' }} onClick={async () => { 
+            await Remote.createWindow("AboutWindow.js");
+          }}>abotu<span id="CWD"></span></button>
+          <button className="btn btn-primary" style={{ maxWidth: '10em' }} onClick={async () => {
             await Remote.createWindow("SettingsWindow.js");
-             }}>settggs<span id="CWD"></span></button>
+          }}>settggs<span id="CWD"></span></button>
           <button className="btn btn-primary" style={{ maxWidth: '10em' }} onClick={async () => { $('#CWD').html(await Remote.process_cwd()); }}>CWD:<span id="CWD"></span></button>
           <button className="btn btn-primary" style={{ maxWidth: '10em' }} onClick={async () => {
             let fq: string = await Remote.path_join(await Remote.process_cwd(), '/testdata');

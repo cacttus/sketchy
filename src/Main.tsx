@@ -40,7 +40,7 @@ class MainProcess {
       minimizable: is_modal ? true : false,
       maximizable: is_modal ? true : false,
       fullscreenable: is_modal ? true : false,
-      show: false, //Initially hide the window. This is for setting the window's custom properties or else it would animate.
+      show: true, //Initially hide the window. This is for setting the window's custom properties or else it would animate.
       //frame:false,//hides frame.
       webPreferences: {
         devTools: true,
@@ -78,6 +78,7 @@ class MainProcess {
         "   console.log(\"Exported Webpack App is: \"); " + nl +
         "   console.log(ElectronApp); " + nl +
         "   ___win = new ElectronApp." + className + ";" + nl +
+        "   ___win.init();" + nl +
         " }; " + nl +
         ""
       );
@@ -178,6 +179,45 @@ class MainProcess {
         return null;
       }
     });
+    ipcMain.handle(RPCMethods.fs_writeFile, async (event, arg) => {
+      try {
+        await fs.writeFile(arg[0], arg[1]).then((value: void) => {
+          return true;
+        }, (reason: any) => {
+          console.log(reason);
+          return false;
+        });
+      }
+      catch (ex) {
+        console.log(ex);
+        return false;
+      }
+    });
+    ipcMain.handle(RPCMethods.fs_mkdir, async (event, arg) => {
+      try {
+        await fs.mkdir(arg[0]).then(
+          (value: void) => { 
+            return true;
+          }, 
+          (reason:any)=>{console.log(reason); 
+            return false;
+          });
+      }
+      catch (ex) {
+        console.log(ex);
+        return false;
+      }
+    });
+    ipcMain.handle(RPCMethods.fs_stat, async (event, arg) => {
+      //returns Stats, or null if DNE
+      try {
+        return await fs.stat(arg[0]);
+      }
+      catch (ex) {
+        console.log(ex);
+        return null;
+      }
+    });
     ipcMain.handle(RPCMethods.fs_readdir, async (event, arg) => {
       try {
         const files : any = await fs.readdir(arg[0]);
@@ -234,45 +274,20 @@ class MainProcess {
         console.log(ex);
       }
     });
-    ipcMain.handle(RPCMethods.fs_writeFile, async (event, arg) => {
-      try {
-        await fs.writeFile(arg[0], arg[1]).then((value: void) => {
-          return true;
-        }, (reason: any) => {
-          console.log(reason);
-          return false;
-        });
-      }
-      catch (ex) {
-        console.log(ex);
-        return false;
-      }
-    });
-    ipcMain.handle(RPCMethods.fs_mkdir, async (event, arg) => {
-      try {
-        await fs.mkdir(arg[0]).then(
-          (value: void) => { 
-            return true;
-          }, 
-          (reason:any)=>{console.log(reason); 
-            return false;
-          });
-      }
-      catch (ex) {
-        console.log(ex);
-        return false;
-      }
-    });
-    ipcMain.handle(RPCMethods.fs_stat, async (event, arg) => {
+    ipcMain.handle(RPCMethods.closeWindow, async (event, arg) => {
       //returns Stats, or null if DNE
       try {
-        return await fs.stat(arg[0]);
+        console.log("Closing window " + arg[0]);
+        var bw = BrowserWindow.fromId(arg[0]);
+        bw.close();
       }
       catch (ex) {
         console.log(ex);
         return null;
       }
     });
+
+
   }
 
 }

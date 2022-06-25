@@ -11,5 +11,7 @@ cp -u ./src/preload.js ./dist/preload.js
 cp -u ./src/require.js ./dist/require.js 
 cp -u ./src/bootstrap-datetimepicker.js ./dist/bootstrap-datetimepicker.js 
 cp -u ./src/bootstrap-datetimepicker.css ./dist/bootstrap-datetimepicker.css
+cp -u ./src/icon.ico ./dist/icon.ico
+cp -u ./src/icon.png ./dist/icon.png
 echo ...compile
 webpack --config ./webpack.config.js --mode development 

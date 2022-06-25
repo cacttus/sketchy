@@ -13,3 +13,6 @@ contextBridge.exposeInMainWorld("api", {
   // }
 });
 
+//https://github.com/aws-amplify/amplify-js/issues/678#issuecomment-389106098
+contextBridge.exposeInMainWorld("global", window);
+

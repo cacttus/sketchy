@@ -80,13 +80,18 @@ render.entry = {
 ..
 ```
 
-## Bundling  (.exe, .appimage, .rpm, .deb, etc.)
+## Bundling  (.exe, .rpm, .deb, appimage,  etc.)
 
-To bundle the application into an .exe, .rpm, .deb, .AppImage, or other standalone format run:
+To bundle the application into an .exe, .rpm, .deb, AppImage, or other standalone format run:
 
 `npx electron-builder`
 
+After building this application. (Make sure `build-dev.sh` is run first so contents are copied.)
+
+Binary is placed in `/dist/`.
+
 You can configure electron-builder in the `build` property within `package.json`. 
+_Note: the extends:'null' is required to prevent electron-builder from looking at /public/electron.js_
 
 See the documentation for [electron-builder](https://www.electron.build/) for more info.
 

@@ -16,6 +16,7 @@ export class RPCMethods {
   public static setTitle: string = "setTitle";
   public static setSize: string = "setSize";
   public static showWindow: string = "showWindow";
+  public static closeWindow: string = "closeWindow";
 }
 
 export class Remote {
@@ -52,8 +53,11 @@ export class Remote {
     return (window as any).api.callSync(RPCMethods.fs_readFile, path1).then((val: any) => {
       try {
         //Should be a blob
-        const buf = (val as Uint8Array).buffer;
-        return buf;
+        //console.log("got buf " + val);
+        //const buf = (val as Uint8Array).buffer;
+        //console.log("got buf cv " + buf);
+        //the conversion was converting it to some weird 8192 thing
+        return val;
       }
       catch (ex) {
         console.log(ex);
@@ -61,6 +65,26 @@ export class Remote {
       }
     });
   }
+  // public static fs_readFileText(path1: string): Promise<string> {
+  //   //returns the raw data. .. for some reason there is a parse problem.
+  //   return fs_readFile(path1).then(()=>{
+
+  //   });
+  //   return (window as any).api.callSync(RPCMethods.fs_readFile, path1).then((val: any) => {
+  //     try {
+  //       //Should be a blob
+  //       //console.log("got buf " + val);
+  //       //const buf = (val as Uint8Array).buffer;
+  //       //console.log("got buf cv " + buf);
+  //       //the conversion was converting it to some weird 8192 thing
+  //       return val;
+  //     }
+  //     catch (ex) {
+  //       console.log(ex);
+  //       return ex;
+  //     }
+  //   });
+  // }
   public static fs_writeFile(fileLoc: string, fileContents: string): Promise<boolean> {
     return (window as any).api.callSync(RPCMethods.fs_writeFile, fileLoc, fileContents);
   }
@@ -93,5 +117,31 @@ export class Remote {
   public static showWindow(winID: number, show: boolean): Promise<void> {
     return (window as any).api.callSync(RPCMethods.showWindow, winID, show);
   }
-
+  public static closeWindow(winID: number): Promise<void> {
+    return (window as any).api.callSync(RPCMethods.closeWindow, winID);
+  }
+  public static fileExists(file: string): Promise<boolean> {
+    return Remote.fs_stat(file).then((value: Stats) => {
+      return (value !== null && value !== undefined);
+    });
+  }
+  public static fs_readAllText(file: string): Promise<string> {
+    return Remote.fs_readFile(file).then((buf: Buffer) => {
+      if( buf.constructor !== Uint8Array){
+        console.log("Warning: input file was not a uin8array, could produce errors.");
+        console.log("  buf= " + buf);
+      }
+      else {
+        console.log("buf was uint8array");
+      }
+      let stringret = String.fromCharCode.apply(null, [...buf]);
+      return stringret;
+    });
+  }
+  public static fs_readAllLines(file: string): Promise<string[]> {
+    return Remote.fs_readAllText(file).then((text:string) => {
+      let lines : string[]= text.toString().split(/(?:\r\n|\r|\n)/g);
+      return lines;
+    });
+  }
 }

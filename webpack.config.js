@@ -32,27 +32,20 @@ var template = {
         use: [{ loader: 'ts-loader', options: { onlyCompileBundledFiles: true } }]
       },
       {
-        test: /\.css$/,
-        use: ["style-loader", "css-loader"],
+        test: /\.(sa|sc|c)ss$/,
+        use: [
+          'style-loader',
+          'css-loader',
+          'sass-loader',
+        ],
       },
       {
-        test: /\.scss$/,
-        loader: 'sass-loader' // 将 Sass 编译成 CSS
+        //this took a while to figure out ugh.
+         test: /\.(jpg|jpeg|png|woff|woff2|eot|ttf|svg)$/,
+        type: 'asset/resource',
+        dependency: { not: ['url'] },
       },
-      {
-        test: /\.png|svg|jpg|gif$/,
-        use: ["file-loader"],
-      },
-      {
-        test: /\.(jpe?g|png|gif|svg)$/i,
-        use: ['file-loader?name=[name].[ext]&outputPath=images/&publicPath=images/',
-          'image-webpack-loader'
-        ]
-      },
-      {
-        test: /\.(eot|ttf|woff|woff2)(\?v=\d+\.\d+\.\d+)?$/,
-        use: 'file-loader?name=[name].[ext]&outputPath=fonts/&publicPath=fonts/'
-      }
+
     ],
   },
   resolve: {
@@ -62,25 +55,24 @@ var template = {
   output: {
     path: path.resolve(__dirname, "./dist"),
     filename: "[name].js",
-    publicPath: "/assets/",
+    publicPath: 'auto',
     clean: false,
     library: {
       type: 'var',
-      name:'ElectronApp' //Very important so that we can expose client side controls and create components at runtime.
+      name: 'ElectronApp' //Very important so that we can expose client side controls and create components at runtime.
     }
 
   },
   plugins: [],
-  devServer: {
-    host: "localhost",
-    hot: true,
-    port: 8000,
-    https: false,
-    static: {
-      directory: path.join(__dirname, 'dist'),
-    },
-
-  }
+  // devServer: {
+  //   host: "localhost",
+  //   hot: true,
+  //   port: 8000,
+  //   https: false,
+  //   static: {
+  //     directory: path.join(__dirname, 'dist'),
+  //   },
+  // }
 };
 
 //Render Process

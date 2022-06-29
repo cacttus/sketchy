@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, Menu, MenuItem, dialog } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { RPCMethods } from "./Remote"
+import { Stats } from 'fs'
 
 /**
  This is the main process code, which can be moved into the rendering thread.
@@ -40,12 +41,12 @@ class MainProcess {
       minimizable: is_modal ? true : false,
       maximizable: is_modal ? true : false,
       fullscreenable: is_modal ? true : false,
-      show: true, //Initially hide the window. This is for setting the window's custom properties or else it would animate.
+      show: false, //Initially hide the window. This is for setting the window's custom properties or else it would animate.
       //frame:false,//hides frame.
       webPreferences: {
         devTools: true,
         preload: path.join(MainProcess.appPath(), 'preload.js'), // only if nodeintegration is false.
-        nodeIntegration: false, //Access node on rendering thread. IPC is for more secure apps. This is a destkop app. Disable this for server or web apps.
+        nodeIntegration: false, //Access node on rendering thread. IPC is for more secure apps. Disable this for server or web apps and add preload.js
         contextIsolation: true, //set to false for desktop only when nodeintegration=true
         //enableRemoteModule: false /*  */
       }
@@ -82,6 +83,12 @@ class MainProcess {
         " }; " + nl +
         ""
       );
+    });
+
+    bw.addListener('resize', (e: Electron.Event, b: boolean) => {
+      let json = JSON.stringify({ width: bw.getSize()[0], height: bw.getSize()[1] });
+
+      bw.webContents.send(RPCMethods.onResize, json);
     });
 
     return bw;
@@ -166,7 +173,7 @@ class MainProcess {
     });
     ipcMain.handle(RPCMethods.fs_readFile, async (event, arg) => {
       try {
-        const  buffer = await fs.readFile(arg[0]);
+        const buffer = await fs.readFile(arg[0]);
         //In order to passa buffer to/from the main process you either need to serialize or use electron.remote .. ugh
         //https://github.com/electron/electron/issues/2104
         //https://github.com/electron/electron/issues/9509  
@@ -196,10 +203,11 @@ class MainProcess {
     ipcMain.handle(RPCMethods.fs_mkdir, async (event, arg) => {
       try {
         await fs.mkdir(arg[0]).then(
-          (value: void) => { 
+          (value: void) => {
             return true;
-          }, 
-          (reason:any)=>{console.log(reason); 
+          },
+          (reason: any) => {
+            console.log(reason);
             return false;
           });
       }
@@ -208,10 +216,33 @@ class MainProcess {
         return false;
       }
     });
+    ipcMain.handle(RPCMethods.isFile, async (event, arg) => {
+      //returns Stats, or null if DNE
+      try {
+        let stats: Stats = await fs.stat(arg[0]);
+        return stats.isFile();
+      }
+      catch (ex) {
+        console.log(ex);
+        return null;
+      }
+    });
+    ipcMain.handle(RPCMethods.isDirectory, async (event, arg) => {
+      //returns Stats, or null if DNE
+      try {
+        let stats: Stats = await fs.stat(arg[0]);
+        return stats.isDirectory();
+      }
+      catch (ex) {
+        console.log(ex);
+        return null;
+      }
+    });
     ipcMain.handle(RPCMethods.fs_stat, async (event, arg) => {
       //returns Stats, or null if DNE
       try {
-        return await fs.stat(arg[0]);
+        let stats: Stats = await fs.stat(arg[0]);
+        return stats;
       }
       catch (ex) {
         console.log(ex);
@@ -220,7 +251,7 @@ class MainProcess {
     });
     ipcMain.handle(RPCMethods.fs_readdir, async (event, arg) => {
       try {
-        const files : any = await fs.readdir(arg[0]);
+        const files: any = await fs.readdir(arg[0]);
         return files;
       }
       catch (err) {
@@ -287,7 +318,15 @@ class MainProcess {
         return null;
       }
     });
-
+    ipcMain.handle(RPCMethods.logConsole, async (event, arg) => {
+      try {
+        console.log(arg[0]);
+      }
+      catch (ex) {
+        console.log(ex);
+        return null;
+      }
+    });
 
   }
 

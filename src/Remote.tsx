@@ -1,3 +1,4 @@
+import { IpcRenderer } from "electron";
 import { Stats } from "webpack";
 
 export class RPCMethods {
@@ -17,6 +18,11 @@ export class RPCMethods {
   public static setSize: string = "setSize";
   public static showWindow: string = "showWindow";
   public static closeWindow: string = "closeWindow";
+  public static logConsole: string = "logConsole";
+  public static isFile: string = "isFile";
+  public static isDirectory : string = "isDirectory";
+
+  public static onResize : string = 'onResize'; 
 }
 
 export class Remote {
@@ -28,11 +34,12 @@ export class Remote {
     var api = (window as any).api;
     api.send(event, data);
   }
-  public static receive(func: any): void {
+  public static receive(event:string, callback : (json:any) => void): void {
     //Receive from main.
-    var api = (window as any).api;
-    api.receive((id: string, data: any) => {
-      func(id, data);
+    (window as any).api.receive(event, (event:Electron.IpcRendererEvent, ...args: any[])=>{
+      //Electron's cleint-server RPC requires sending of JSON for many types. So we will automatic convert to/from json (ugh).
+      let json = JSON.parse(args[0]);
+      callback(json);
     });
   }
   public static test(a: string, num1: number, num2: number): Promise<string> {
@@ -48,15 +55,8 @@ export class Remote {
     return (window as any).api.callSync(RPCMethods.fs_access, path, mode);
   }
   public static fs_readFile(path1: string): Promise<Buffer> {
-    //returns the raw data. .. for some reason there is a parse problem.
-
     return (window as any).api.callSync(RPCMethods.fs_readFile, path1).then((val: any) => {
       try {
-        //Should be a blob
-        //console.log("got buf " + val);
-        //const buf = (val as Uint8Array).buffer;
-        //console.log("got buf cv " + buf);
-        //the conversion was converting it to some weird 8192 thing
         return val;
       }
       catch (ex) {
@@ -65,26 +65,6 @@ export class Remote {
       }
     });
   }
-  // public static fs_readFileText(path1: string): Promise<string> {
-  //   //returns the raw data. .. for some reason there is a parse problem.
-  //   return fs_readFile(path1).then(()=>{
-
-  //   });
-  //   return (window as any).api.callSync(RPCMethods.fs_readFile, path1).then((val: any) => {
-  //     try {
-  //       //Should be a blob
-  //       //console.log("got buf " + val);
-  //       //const buf = (val as Uint8Array).buffer;
-  //       //console.log("got buf cv " + buf);
-  //       //the conversion was converting it to some weird 8192 thing
-  //       return val;
-  //     }
-  //     catch (ex) {
-  //       console.log(ex);
-  //       return ex;
-  //     }
-  //   });
-  // }
   public static fs_writeFile(fileLoc: string, fileContents: string): Promise<boolean> {
     return (window as any).api.callSync(RPCMethods.fs_writeFile, fileLoc, fileContents);
   }
@@ -144,4 +124,14 @@ export class Remote {
       return lines;
     });
   }
+  public static logConsole(str:string) : Promise<void> { 
+    return (window as any).api.callSync(RPCMethods.logConsole, str)
+  }
+  public static isFile(path:string) : Promise<boolean> { 
+    return (window as any).api.callSync(RPCMethods.isFile, path)
+  }
+  public static isDirectory(path:string) : Promise<boolean> { 
+    return (window as any).api.callSync(RPCMethods.isDirectory, path)
+  }
+
 }

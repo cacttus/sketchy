@@ -8,9 +8,9 @@ contextBridge.exposeInMainWorld("api", {
   // send: (id, data) => {
   //   ipcRenderer.send("toMain", [id, data]);
   // },
-  // receive: (func) => {
-  //   ipcRenderer.on("fromMain", (event, args) => func(args[0], args[1]));
-  // }
+  receive: (event, callback) => {
+    ipcRenderer.on(event, callback);
+  }
 });
 
 //https://github.com/aws-amplify/amplify-js/issues/678#issuecomment-389106098

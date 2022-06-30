@@ -14,17 +14,15 @@ Install Nodejs via cURL (Linux) or download (Windows).
 
 * _Note: The Linux package version of Node may be out of date, depending on your distro._
 
-If you're new to NPM, it installs all the dependencies by simply navigating to this project folder and running
+Then simply navigate to the project folder and run:
 
 `npm install`
 
-VSCode is set up so that F5 should build and run the project.
-
-Then, in a terminal window, in the sketchy folder run: 
+In a terminal window, in the sketchy folder run: 
 
 `npx webpack -w --mode=development --config=./webpack.config.js`
 
-This is far faster than using a .sh script, as webpack is optimized to run in watch (-w) mode.
+* _Note: webpack is optimized to run in watch (-w) mode._
 
 To run use `F5` in vscode, or `npm run electron .` in a terminal window.
 

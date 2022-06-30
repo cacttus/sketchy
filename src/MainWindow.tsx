@@ -97,7 +97,7 @@ export class MainWindow extends ElectronWindow {
     return (
       <div style={{ maxHeight: '100vh', margin: '0', padding: '0' }} className="">
         <Form className="align-items-center" style={{ maxHeight: '100vh', margin: '0', padding: '0', textAlign: 'center' }}>
-          <div style={{ position: 'absolute', width: '75%' }} id="mainNav" >
+          <div style={{ position: 'absolute', width: '100%' }} id="mainNav" >
             <Nav activeKey="/home" className="bg-dark p-1">
               <Nav.Item className="p-0">
                 <Dropdown>
@@ -128,7 +128,7 @@ export class MainWindow extends ElectronWindow {
           <img id="theImage" className="  " style={{ width: 'auto' }}></img>
           <div className="row justify-content-center fixed-bottom">
             <div className="col-12">
-              <div id="timelabel" style={{ color: '#212121', opacity: 0.5, display: 'none' }}>time</div>
+              <div id="timelabel" style={{ color: '#F9F9F9', opacity: 0.5, display: 'none', backgroundColor:'#212121' }}>time</div>
               <div id="progressbar" style={{ height: '.1em', backgroundColor: '#770000', opacity: 0.5 }} role="progressbar" aria-valuemin={0} aria-valuemax={100}></div>
             </div>
           </div>
@@ -213,11 +213,8 @@ export class MainWindow extends ElectronWindow {
     if (s.val > 0) {
       str += s.val + "s";
     }
-    if (m.val > 0) {
-      str += u.val + "u";
-    }
 
-    $('#timelabel').show().html(str).delay(3000).fadeOut(500);
+    $('#timelabel').show().html(str).delay(1000).fadeOut(400);
   }
   private registerKeys(): void {
     let that = this;

@@ -95,8 +95,8 @@ export class MainWindow extends ElectronWindow {
     //Note: the super class is not constructed when render() is run
 
     return (
-      <div style={{ maxHeight: '100vh'  ,margin:'0', padding:'0'}} className="">
-        <Form style={{ maxHeight: '100vh' ,margin:'0', padding:'0'}}>
+      <div style={{ maxHeight: '100vh', margin: '0', padding: '0' }} className="">
+        <Form className="align-items-center" style={{ maxHeight: '100vh', margin: '0', padding: '0', textAlign: 'center' }}>
           <div style={{ position: 'absolute', width: '75%' }} id="mainNav" >
             <Nav activeKey="/home" className="bg-dark p-1">
               <Nav.Item className="p-0">
@@ -124,12 +124,12 @@ export class MainWindow extends ElectronWindow {
             </Nav>
             <FormLabel id="infoMessage" className="labelMessage" ></FormLabel>
           </div>
-          
-                <img id="theImage" className="  " style={{ width: 'auto' }}></img>
+
+          <img id="theImage" className="  " style={{ width: 'auto' }}></img>
           <div className="row justify-content-center fixed-bottom">
             <div className="col-12">
               <div id="timelabel" style={{ color: '#212121', opacity: 0.5, display: 'none' }}>time</div>
-              <div id="progressbar" style={{ height: '.14em', backgroundColor: '#FF0000' }} role="progressbar" aria-valuemin={0} aria-valuemax={100}></div>
+              <div id="progressbar" style={{ height: '.1em', backgroundColor: '#770000', opacity: 0.5 }} role="progressbar" aria-valuemin={0} aria-valuemax={100}></div>
             </div>
           </div>
         </Form>
@@ -156,7 +156,6 @@ export class MainWindow extends ElectronWindow {
         this.stop();
       }
       else {
-        this.message(img, 100); //TODO: Settings.ShowImageName.
         this._history.push(img);
         this._historyIndex = this._history.length - 1;
       }
@@ -264,7 +263,7 @@ export class MainWindow extends ElectronWindow {
   private start(): void {
     var that = this;
 
-    that._progressBar().css('background-color', '#00FF00');
+    that._progressBar().css('background-color', '#007700');
 
     let stepms: number = 50;
 
@@ -318,7 +317,7 @@ export class MainWindow extends ElectronWindow {
     clearInterval(that._imageTimer);
     that._imageTimer = null;
     that._progressBar().css('width', '0%');
-    that._progressBar().css('background-color', '#FF0000');
+    that._progressBar().css('background-color', '#770000');
   }
   private pause(): void {
     let that = this;
@@ -374,6 +373,9 @@ export class MainWindow extends ElectronWindow {
           $("#theImage").attr("src", img2.src);
 
           that.scaleImage();
+
+          this.message(fullPath, 100); //TODO: Settings.ShowImageName.
+
         };
       });
     });

@@ -16,6 +16,7 @@ import { Globals } from './Globals';
 import { vec2 } from "./Math";
 import { isUint16Array } from "util/types";
 import { isForStatement } from "typescript";
+import './MainWindow.css';
 
 enum State { start, stop, pause };
 
@@ -33,6 +34,8 @@ export class MainWindow extends ElectronWindow {
   private _historyIndex: number = -1;
   private _progressBar = () => { return $('#progressbar') };
   private _showNavTimer: NodeJS.Timer = null;
+  private _showMsgTimer: NodeJS.Timer = null;
+  private _imgSize: vec2 = new vec2();
 
   public constructor() {
     super();
@@ -57,78 +60,89 @@ export class MainWindow extends ElectronWindow {
     x._title = "Sketchy";
     return x;
   }
-  protected message(msg: string): void {
+  protected message(msg: string, duration: number = 2000): void {
     //Emit a message, and show the nav
     $('#infoMessage').html(msg);
     console.log(msg);
-    this.showNav();
+    this.showMsg(duration);
   }
-  protected showNav(): void {
+  protected showNav(duration: number = 2000): void {
     //Pop up the nav, hide after a few seconds
     let nav = $('#mainNav');
     if (!nav.is(':visible')) {
-      nav.show(100);
+      nav.fadeIn(100);
     }
     clearInterval(this._showNavTimer);
     this._showNavTimer = null;
     this._showNavTimer = setInterval(() => {
-      nav.hide(100);
-    }, 2000);
+      nav.fadeOut(100);
+    }, duration);
+  }
+  protected showMsg(duration: number = 2000): void {
+    //Pop up the nav, hide after a few seconds
+    let mnsg = $('#infoMessage');
+    if (!mnsg.is(':visible')) {
+      mnsg.fadeIn(100);
+    }
+    clearInterval(this._showMsgTimer);
+    this._showMsgTimer = null;
+    this._showMsgTimer = setInterval(() => {
+      mnsg.fadeOut(100);
+    }, duration);
   }
   protected override render(): JSX.Element {
     let that = this;
     //Note: the super class is not constructed when render() is run
 
     return (
-      <Form>
-        <style>
-
-        </style>
-        <Nav activeKey="/home" className="bg-light p-1" id="mainNav">
-          <Nav.Item className="p-0">
-            <Dropdown>
-              <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
-                File
-              </Dropdown.Toggle>
-              <Dropdown.Menu>
-                <Dropdown.Item onClick={() => { that.randomImage(); }}>Random Image <span className="material-icons">face</span></Dropdown.Item>
-                <Dropdown.Item onClick={async () => { await Remote.createWindow("SettingsWindow.js"); }}>Settings</Dropdown.Item>
-                <Dropdown.Item onClick={() => { Remote.closeWindow(that.winId()); }}>Exit</Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
-          </Nav.Item>
-          <Nav.Item className="p-0">
-            <Dropdown>
-              <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
-                Help
-              </Dropdown.Toggle>
-              <Dropdown.Menu>
-                <Dropdown.Item onClick={async () => { await Remote.createWindow("AboutWindow.js"); }}>About</Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
-          </Nav.Item>
-          <Nav.Item className="p-0">
-            <FormLabel id="infoMessage"></FormLabel>
-          </Nav.Item>
-        </Nav>
-        <img id="theImage" style={{ maxWidth: '100%', height: '100%', width: 'auto', maxHeight: '100%' }}></img>
-        <div className="row justify-content-center fixed-bottom">
-          <div className="col-12">
-            <div id="timelabel" style={{ color: '#212121', opacity: 0.5, display: 'none' }}>time</div>
-            <div id="progressbar" style={{ height: '.14em', backgroundColor: '#FF0000' }} role="progressbar" aria-valuemin={0} aria-valuemax={100}></div>
+      <div style={{ maxHeight: '100vh'  ,margin:'0', padding:'0'}} className="">
+        <Form style={{ maxHeight: '100vh' ,margin:'0', padding:'0'}}>
+          <div style={{ position: 'absolute', width: '75%' }} id="mainNav" >
+            <Nav activeKey="/home" className="bg-dark p-1">
+              <Nav.Item className="p-0">
+                <Dropdown>
+                  <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
+                    File
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>
+                    <Dropdown.Item onClick={() => { that.randomImage(); }}>Random Image <span className="material-icons">face</span></Dropdown.Item>
+                    <Dropdown.Item onClick={async () => { await Remote.createWindow("SettingsWindow.js"); }}>Settings</Dropdown.Item>
+                    <Dropdown.Item onClick={() => { Remote.closeWindow(that.winId()); }}>Exit</Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
+              </Nav.Item>
+              <Nav.Item className="p-0">
+                <Dropdown>
+                  <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
+                    Help
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>
+                    <Dropdown.Item onClick={async () => { await Remote.createWindow("AboutWindow.js"); }}>About</Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
+              </Nav.Item>
+            </Nav>
+            <FormLabel id="infoMessage" className="labelMessage" ></FormLabel>
           </div>
-        </div>
-      </Form>
+          
+                <img id="theImage" className="  " style={{ width: 'auto' }}></img>
+          <div className="row justify-content-center fixed-bottom">
+            <div className="col-12">
+              <div id="timelabel" style={{ color: '#212121', opacity: 0.5, display: 'none' }}>time</div>
+              <div id="progressbar" style={{ height: '.14em', backgroundColor: '#FF0000' }} role="progressbar" aria-valuemin={0} aria-valuemax={100}></div>
+            </div>
+          </div>
+        </Form>
+      </div>
     );
   }
   protected override onResize(w: number, h: number): void {
-    console.log("Got the on resize avent yay : " + w + " " + h);
-
-    //TODO: resize image to fit viewport.
+    console.log("Window Resize:" + w + " " + h);
+    this.scaleImage();
   }
   protected override onMouseMove(curPos: vec2, delta: vec2): void {
-    console.log('mous ' + curPos.x + "," + curPos.y + "  .... " + delta.x + "," + delta.y + " ");
-    this.showNav();
+    this.showNav(2000);
+    this.showMsg(2000);
   }
   private async nextImage(): Promise<void> {
     let img: string = "";
@@ -142,6 +156,7 @@ export class MainWindow extends ElectronWindow {
         this.stop();
       }
       else {
+        this.message(img, 100); //TODO: Settings.ShowImageName.
         this._history.push(img);
         this._historyIndex = this._history.length - 1;
       }
@@ -310,29 +325,56 @@ export class MainWindow extends ElectronWindow {
     that._state = State.pause;
     that._progressBar().css('background-color', '#AAAAAA');
   }
+  private scaleImage(): void {
+    //Image "Fill" algorithm, note we use maxWidth=100vh for the form to make sure there's no scrollbar.
+    let that = this;
+    let img = $("#theImage");
+    img.ready(() => {
+      let iw = that._imgSize.x;
+      let ih = that._imgSize.y;
+      let pw = $(window).width();
+      let ph = $(window).height();
+
+      console.log('iw=' + iw + ',ih=' + ih + ',pw=' + pw + ',ph=' + ph);
+
+      let wr = iw / pw;
+      let hr = ih / ph;
+
+      let h = 0;
+      let w = 0;
+      if (wr > hr) {
+        w = pw;
+        h = ih * (pw / iw);
+      }
+      else {
+        h = ph;
+        w = iw * (ph / ih);
+      }
+
+      img.css({
+        width: w,
+        height: h
+      });
+
+    });
+  }
   private async setImageFromFile(fullPath: string): Promise<void> {
+    let that = this;
     //open a file and set the image tag.
     await Remote.fs_access(fullPath).then(async () => {
       await Remote.fs_readFile(fullPath).then((value: Buffer) => {
-        let img = $("#theImage");
-        img.attr("src", URL.createObjectURL(
-          new Blob([value], { type: 'image/jpg' } /* (1) */)
-        ));
 
-        //This doesn't work. Ugh.
-        img.ready(() => {
-          let imgWidth = img.width();
-          let imgHeight = img.height();
-          let winWidth = $(window).height();
-          let winHeight = $(window).width();
-          let ratio = Math.min(winWidth / imgWidth, winHeight / imgHeight);
-          img.stop(true, false).animate({
-            height: imgHeight * ratio,
-            width: imgWidth * ratio
-          });
+        //Create a raw image object to get the actual w/h
+        let img2 = new Image();
+        img2.src = URL.createObjectURL(new Blob([value], { type: 'image/jpg' }));
+        img2.onload = () => {
+          that._imgSize.x = img2.width;
+          that._imgSize.y = img2.height;
 
-        });
+          $("#theImage").attr("src", img2.src);
 
+          that.scaleImage();
+        };
       });
     });
   }
@@ -341,9 +383,6 @@ export class MainWindow extends ElectronWindow {
 
     //TODO: if Settings.Repeat == true
 
-    //Dumb algorithm which would approach O(infinity). The correct approach would be to
-    //divide the search space into a btree, and prune nodes that have been selected. Then we can use a random
-    //binary value to search each level of the tree. Honestly, I don't intend on running this on millions of images, so this will suffice for now
 
     let selected = { val: '' };
 
@@ -351,6 +390,11 @@ export class MainWindow extends ElectronWindow {
       this.message("No files remain");
     }
     else {
+
+      //Dumb algorithm which would approach O(infinity). The correct approach would be to
+      //divide the search space into a btree, and prune nodes that have been selected. Then we can use a random
+      //binary value to search each level of the tree. Honestly, I don't intend on running this on millions of images, so this will suffice for now
+
       let rfile = 0;
       while (true) {
         rfile = Math.floor(Math.random() * that._fileCount);

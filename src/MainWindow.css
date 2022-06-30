@@ -1,0 +1,15 @@
+body {
+  background: #1f1f1f;
+  margin:0;
+  padding:0;
+}
+.labelMessage {
+  color:snow;
+  background: #1f1f1f;
+}
+.pb-active{
+  color:rgba(20, 210, 20, 0.4);
+}
+.pb-stop{
+  color:rgba(210, 20, 20, 0.4);
+}

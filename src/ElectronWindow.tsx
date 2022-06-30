@@ -85,11 +85,9 @@ export class ElectronWindow {
     root.render(
       <React.StrictMode>
         <div className="container-fluid h-100">
-          <div className="row justify-content-center h-100">
-            <div className="col-12">
+          <div className="row h-100  align-items-center justify-content-center">
               {/* Your Window Controls here. */}
               {ctl}
-            </div>
           </div>
         </div>
       </React.StrictMode>

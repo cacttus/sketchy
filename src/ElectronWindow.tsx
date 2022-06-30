@@ -8,6 +8,7 @@ import { Controls } from "./Controls";
 import { Log } from "./Log";
 import internal from "stream";
 import { throwDeprecation } from "process";
+import { vec2 } from './Math'
 
 export class WindowCreateInfo {
   public _title: string = "unset-title";
@@ -40,6 +41,15 @@ export class ElectronWindow {
     Remote.receive(RPCMethods.onResize, (json:any) => {
       that.onResize(json.width, json.height);
     });
+    document.addEventListener('mousemove',(e:MouseEvent)=>{
+      let cp : vec2 = new vec2();
+      cp.x = e.clientX;
+      cp.y = e.clientY;
+      let delta : vec2 = new vec2();
+      delta.x = e.movementX;
+      delta.y = e.movementY;
+      that.onMouseMove(cp,delta);
+    });
     //...
   }
   protected async init?(): Promise<void>; //Do async stuff here. Called after the constructor.
@@ -48,6 +58,7 @@ export class ElectronWindow {
     /* @ts-ignore */
     return ___winID;
   }
+  protected onMouseMove?(curPos:vec2, delta:vec2) { }
   protected onResize?(width:number, height:number) { }
   protected getCreateInfo?(): WindowCreateInfo;
   protected render?(): JSX.Element;//Window controls here.

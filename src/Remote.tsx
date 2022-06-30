@@ -21,6 +21,7 @@ export class RPCMethods {
   public static logConsole: string = "logConsole";
   public static isFile: string = "isFile";
   public static isDirectory : string = "isDirectory";
+  public static path_resolve : string = "path_resolve";
 
   public static onResize : string = 'onResize'; 
 }
@@ -50,6 +51,10 @@ export class Remote {
   }
   public static path_join(path1: string, path2: string): Promise<string> {
     return (window as any).api.callSync(RPCMethods.path_join, path1, path2);
+  }
+  public static path_resolve(path1: string): Promise<string> {
+    //Returns the fully rooted path
+    return (window as any).api.callSync(RPCMethods.path_resolve, path1);
   }
   public static fs_access(path: string, mode?: number): Promise<boolean> {
     return (window as any).api.callSync(RPCMethods.fs_access, path, mode);

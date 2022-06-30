@@ -327,7 +327,15 @@ class MainProcess {
         return null;
       }
     });
-
+    ipcMain.handle(RPCMethods.path_resolve, async (event, arg) => {
+      try {
+        return path.resolve(arg[0]);
+      }
+      catch (ex) {
+        console.log(ex);
+        return null;
+      }
+    });
   }
 
 }

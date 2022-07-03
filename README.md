@@ -1,6 +1,11 @@
 
 
 
+TODO:
+1. Back/forward
+2. Settings for folder.
+3. Get AppImage to work.
+
 # Sketchy
 
 This is an example of a desktop only electron app that contains server-side (native) control logic on the client. The application can be packaged

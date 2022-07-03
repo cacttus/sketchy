@@ -17,6 +17,7 @@ import { vec2 } from "./Math";
 import { isUint16Array } from "util/types";
 import { isForStatement } from "typescript";
 import './MainWindow.css';
+import { ConfigFile } from "./ConfigFile";
 
 enum State { start, stop, pause };
 
@@ -36,6 +37,7 @@ export class MainWindow extends ElectronWindow {
   private _showNavTimer: NodeJS.Timer = null;
   private _showMsgTimer: NodeJS.Timer = null;
   private _imgSize: vec2 = new vec2();
+  private _settingsWindow: number = -1;
 
   public constructor() {
     super();
@@ -45,13 +47,32 @@ export class MainWindow extends ElectronWindow {
     console.log("Main window `" + this.constructor.name + "` async init, cwd: " + await Remote.process_cwd());
     that.registerKeys();
 
-    console.log("rootpath = " + that._dataRootPath);
+    that._settingsWindow = await Remote.createWindow("SettingsWindow.js");
+    this.updateSettings();
+  }
+  private async updateSettings(): Promise<void> {
+    let that = this;
+    console.log("Update settings...");
 
-    let fc = { val: that._fileCount };
-    await MainWindow.traverseDirectory(that._dataRootPath, true, 0, fc, { val: null });
-    that._fileCount = fc.val;
-    this.message("file count=" + that._fileCount);
-    console.log("File count = " + that._fileCount);
+    let mins: number = await this.callWindow(this._settingsWindow, "timeMinutes");
+    let secs: number = await this.callWindow(this._settingsWindow, "timeSeconds");
+    that._maxTime = mins * 60 * 1000 + secs * 1000;
+    let root = await this.callWindow(this._settingsWindow, "directory");
+    //TODO: repeat;
+
+    console.log("Got mins=" + mins + " secs=" + secs + " dir=" + root);
+
+    if (that._dataRootPath !== root) {
+      that._dataRootPath = root;
+
+      console.log("..rootpath = " + that._dataRootPath);
+
+      let fc = { val: that._fileCount };
+      await MainWindow.traverseDirectory(that._dataRootPath, true, 0, fc, { val: null });
+      that._fileCount = fc.val;
+
+      this.message("..File count = " + that._fileCount);
+    }
   }
   protected override getCreateInfo?(): WindowCreateInfo {
     let x = new WindowCreateInfo();
@@ -106,7 +127,7 @@ export class MainWindow extends ElectronWindow {
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
                     <Dropdown.Item onClick={() => { that.randomImage(); }}>Random Image <span className="material-icons">face</span></Dropdown.Item>
-                    <Dropdown.Item onClick={async () => { await Remote.createWindow("SettingsWindow.js"); }}>Settings</Dropdown.Item>
+                    <Dropdown.Item onClick={async () => { await Remote.showWindow(that._settingsWindow, true); }}>Settings</Dropdown.Item>
                     <Dropdown.Item onClick={() => { Remote.closeWindow(that.winId()); }}>Exit</Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
@@ -128,7 +149,7 @@ export class MainWindow extends ElectronWindow {
           <img id="theImage" className="  " style={{ width: 'auto' }}></img>
           <div className="row justify-content-center fixed-bottom">
             <div className="col-12">
-              <div id="timelabel" style={{ color: '#F9F9F9', opacity: 0.5, display: 'none', backgroundColor:'#212121' }}>time</div>
+              <div id="timelabel" style={{ color: '#F9F9F9', opacity: 0.5, display: 'none', backgroundColor: '#212121' }}>time</div>
               <div id="progressbar" style={{ height: '.1em', backgroundColor: '#770000', opacity: 0.5 }} role="progressbar" aria-valuemin={0} aria-valuemax={100}></div>
             </div>
           </div>
@@ -253,6 +274,8 @@ export class MainWindow extends ElectronWindow {
         that.pause();
       }
       else {
+        //Only update when we start/stop.
+        that.updateSettings();
         that.start();
       }
     })
@@ -411,11 +434,11 @@ export class MainWindow extends ElectronWindow {
     }
     return selected.val;
   }
-  private static async getFiles(dir: string): Promise<Array<string>> {
-    let flist: Array<string> = new Array<string>();
-    let fq: string = await Remote.path_join(await Remote.process_cwd(), dir);
-    return await Remote.fs_readdir(fq);
-  }
+  // private static async getFiles(dir: string): Promise<Array<string>> {
+  //   let flist: Array<string> = new Array<string>();
+  //   let fq: string = await Remote.path_join(await Remote.process_cwd(), dir);
+  //   return await Remote.fs_readdir(fq);
+  // }
   private static async traverseDirectory(dir: string, countFilesOnly: boolean, selectedFileIndex: number,
     fileCount: { val: number }, selectedFile: { val: string }, curFileIndex: { val: number } = null): Promise<void> {
     //CountFilesOnly : true = count the files, fileCount must be zero
@@ -431,43 +454,46 @@ export class MainWindow extends ElectronWindow {
       return;
     }
 
-    //Get fully qualified rooted path
-    let root_dir: string = await Remote.path_resolve(dir);
+    if (dir === null || dir === undefined) {
+      console.log("dir was null");
+    }
+    else {
+      //Get fully qualified rooted path
+      let root_dir: string = await Remote.path_resolve(dir);
+      let files = await Remote.fs_readdir(root_dir);
 
-    let files = await Remote.fs_readdir(root_dir);
+      for (let xi = 0; xi < files.length; xi++) {
+        let file_or_dir = files[xi];
 
-    for (let xi = 0; xi < files.length; xi++) {
-      let file_or_dir = files[xi];
+        //console.log(root_dir + "   " + file_or_dir);
 
-      //console.log(root_dir + "   " + file_or_dir);
+        let path = await Remote.path_join(root_dir, file_or_dir);
 
-      let path = await Remote.path_join(root_dir, file_or_dir);
-
-      if (await Remote.isFile(path) === true) {
-        if (countFilesOnly) {
-          if (fileCount.val === -1) {
-            fileCount.val = 0;
+        if (await Remote.isFile(path) === true) {
+          if (countFilesOnly) {
+            if (fileCount.val === -1) {
+              fileCount.val = 0;
+            }
+            fileCount.val++;
           }
-          fileCount.val++;
+          else if (curFileIndex.val === selectedFileIndex) {
+            selectedFile.val = path;
+            return;
+          }
+          else {
+            curFileIndex.val++;
+          }
         }
-        else if (curFileIndex.val === selectedFileIndex) {
-          selectedFile.val = path;
-          return;
-        }
-        else {
-          curFileIndex.val++;
-        }
-      }
 
-      if (await Remote.isDirectory(path) === true) {
-        await MainWindow.traverseDirectory(path, countFilesOnly, selectedFileIndex, fileCount, selectedFile, curFileIndex);
+        if (await Remote.isDirectory(path) === true) {
+          await MainWindow.traverseDirectory(path, countFilesOnly, selectedFileIndex, fileCount, selectedFile, curFileIndex);
 
-        //Check if we already selected something.
-        if ((countFilesOnly === false) && Globals.isNotNull(selectedFile.val) && (selectedFile.val !== '')) {
-          return;
+          //Check if we already selected something.
+          if ((countFilesOnly === false) && Globals.isNotNull(selectedFile.val) && (selectedFile.val !== '')) {
+            return;
+          }
         }
       }
     }
   }
-
 }

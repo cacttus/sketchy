@@ -1,13 +1,13 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, MessageChannelMain  } = require('electron');
 //const { send } = require('process');
 
 contextBridge.exposeInMainWorld("api", {
   callSync: (method, ...args) => {
     return ipcRenderer.invoke(method, args);
   },
-  // send: (id, data) => {
-  //   ipcRenderer.send("toMain", [id, data]);
-  // },
+  send: (event, ...args) => {
+    ipcRenderer.send(event, ...args);
+  },
   receive: (event, callback) => {
     ipcRenderer.on(event, callback);
   }

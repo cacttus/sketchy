@@ -3,7 +3,7 @@ import { Stats } from "webpack";
 
 export class RPCMethods {
   public static test: string = "test";
-  public static openFolderDialog: string = "openFolderDialog";
+  public static showOpenDialog: string = "showOpenDialog";
   public static createWindow: string = "createWindow";
   public static createWindowDetails: string = "createWindowDetails";
   public static path_join: string = "path_join";
@@ -20,34 +20,42 @@ export class RPCMethods {
   public static closeWindow: string = "closeWindow";
   public static logConsole: string = "logConsole";
   public static isFile: string = "isFile";
-  public static isDirectory : string = "isDirectory";
-  public static path_resolve : string = "path_resolve";
+  public static isDirectory: string = "isDirectory";
+  public static path_resolve: string = "path_resolve";
+  public static callWindow: string = "callWindow";
+  public static replyWindow: string = "replyWindow";
 
-  public static onResize : string = 'onResize'; 
+  public static onResize: string = 'onResize';
+}
+
+//This is a copy of ELectron's interface
+export class FileFilter {
+
+  // Docs: https://electronjs.org/docs/api/structures/file-filter
+
+  extensions: string[];
+  name: string;
 }
 
 export class Remote {
   public constructor() {
     var that = this;
   }
-  public static send(event: string, data: any = null): void {
+  public static send(event: string, ...args: any[]): void {
     // Send event to main.
-    var api = (window as any).api;
-    api.send(event, data);
+    (window as any).api.send(event, ...args);
   }
-  public static receive(event:string, callback : (json:any) => void): void {
-    //Receive from main.
-    (window as any).api.receive(event, (event:Electron.IpcRendererEvent, ...args: any[])=>{
-      //Electron's cleint-server RPC requires sending of JSON for many types. So we will automatic convert to/from json (ugh).
-      let json = JSON.parse(args[0]);
-      callback(json);
+  public static receive(event: string, callback: (...args: any[]) => void): void {
+    (window as any).api.receive(event, (event: Electron.IpcRendererEvent, ...args: any[]) => {
+      // "spread syntax" (va_args) and just pass it in. Pretty neat.
+      callback(...args);
     });
   }
   public static test(a: string, num1: number, num2: number): Promise<string> {
     return (window as any).api.callSync("test", [a, num1, num2]);
   }
-  public static openFolderDialog(root: string): Promise<string> {
-    return (window as any).api.callSync(RPCMethods.openFolderDialog, root);
+  public static showOpenDialog(title: string, defaultDir: string, folder: boolean, multiselect: boolean, filters: Array<FileFilter> = null, showHiddenFiles: boolean = false): Promise<any> {
+    return (window as any).api.callSync(RPCMethods.showOpenDialog, title, defaultDir, folder, multiselect, filters, showHiddenFiles);
   }
   public static path_join(path1: string, path2: string): Promise<string> {
     return (window as any).api.callSync(RPCMethods.path_join, path1, path2);
@@ -112,7 +120,7 @@ export class Remote {
   }
   public static fs_readAllText(file: string): Promise<string> {
     return Remote.fs_readFile(file).then((buf: Buffer) => {
-      if( buf.constructor !== Uint8Array){
+      if (buf.constructor !== Uint8Array) {
         console.log("Warning: input file was not a uin8array, could produce errors.");
         console.log("  buf= " + buf);
       }
@@ -124,18 +132,18 @@ export class Remote {
     });
   }
   public static fs_readAllLines(file: string): Promise<string[]> {
-    return Remote.fs_readAllText(file).then((text:string) => {
-      let lines : string[]= text.toString().split(/(?:\r\n|\r|\n)/g);
+    return Remote.fs_readAllText(file).then((text: string) => {
+      let lines: string[] = text.toString().split(/(?:\r\n|\r|\n)/g);
       return lines;
     });
   }
-  public static logConsole(str:string) : Promise<void> { 
+  public static logConsole(str: string): Promise<void> {
     return (window as any).api.callSync(RPCMethods.logConsole, str)
   }
-  public static isFile(path:string) : Promise<boolean> { 
+  public static isFile(path: string): Promise<boolean> {
     return (window as any).api.callSync(RPCMethods.isFile, path)
   }
-  public static isDirectory(path:string) : Promise<boolean> { 
+  public static isDirectory(path: string): Promise<boolean> {
     return (window as any).api.callSync(RPCMethods.isDirectory, path)
   }
 

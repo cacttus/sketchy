@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, MenuItem, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, MenuItem, dialog, OpenDialogOptions } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { RPCMethods } from "./Remote"
@@ -16,7 +16,13 @@ class MainProcess {
   public constructor() {
     let that = this;
 
-    MainProcess._windows.push(MainProcess.createWindowDetails('Sketchy', 'MainWindow.js', 800, 600, false, false));
+    let win = MainProcess.createWindowDetails('Sketchy', 'MainWindow.js', 800, 600, false, false);
+    MainProcess._windows.push(win);
+    win.show();
+    //Close the application when main window closes
+    win.on("close", (e) => {
+      app.quit();
+    });
 
     //Register RPC callbacks
     MainProcess.registerCallbacks();
@@ -41,7 +47,7 @@ class MainProcess {
       minimizable: is_modal ? true : false,
       maximizable: is_modal ? true : false,
       fullscreenable: is_modal ? true : false,
-      show: false, //Initially hide the window. This is for setting the window's custom properties or else it would animate.
+      show: false, //Initially hide the window. This is for setting the window's custom properties or else it would animate and show the initial state.
       //frame:false,//hides frame.
       webPreferences: {
         devTools: true,
@@ -86,9 +92,7 @@ class MainProcess {
     });
 
     bw.addListener('resize', (e: Electron.Event, b: boolean) => {
-      let json = JSON.stringify({ width: bw.getSize()[0], height: bw.getSize()[1] });
-
-      bw.webContents.send(RPCMethods.onResize, json);
+      bw.webContents.send(RPCMethods.onResize, bw.getSize()[0], bw.getSize()[1]);
     });
 
     return bw;
@@ -151,14 +155,36 @@ class MainProcess {
     return path.join(app.getAppPath(), '/dist');
   }
   private static registerCallbacks(): void {
-    ipcMain.handle(RPCMethods.openFolderDialog, async (event, arg) => {
-      const { canceled, filePaths } = await dialog.showOpenDialog(MainProcess.mainWindow());
-      if (canceled) {
-        return;
-      } else {
-        return filePaths[0]
+    ipcMain.handle(RPCMethods.showOpenDialog, async (event, arg) => {
+      let props: Array<string> = [];
+
+      if (arg[2]) {
+        props.push('openDirectory');
       }
+      else {
+        props.push('openFile');
+      }
+      if (arg[3]) {
+        props.push('multiSelections');
+      }
+      if (arg[5]) {
+        props.push('showHiddenFiles');
+      }
+      let opts: Electron.OpenDialogOptions = {
+        title: arg[0],
+        defaultPath: arg[1],
+        /*@ts-ignore*/
+        properties: props,
+      };
+      if (!arg[2] && arg[4] !== null) {
+        opts.filters = arg[4];
+      }
+
+      let { canceled, filePaths } = await dialog.showOpenDialog(MainProcess.mainWindow(), opts);
+
+      return { canceled, filePaths };
     });
+
     ipcMain.handle(RPCMethods.path_join, async (event, arg) => {
       return path.join(arg[0], arg[1]);
     });
@@ -336,13 +362,49 @@ class MainProcess {
         return null;
       }
     });
+    ipcMain.on(RPCMethods.callWindow, async (event, ...args) => {
+      //fromID, toID, func, args
+      try {
+        console.log("Main: CallWindow: " + args)
+
+        let bw = BrowserWindow.fromId(args[1]);
+        if (bw) {
+          bw.webContents.send(RPCMethods.callWindow, ...args);
+        }
+        else {
+          throw "browser window " + args[1] + ' does not exist.';
+        }
+      }
+      catch (ex) {
+        console.log(ex);
+        return null;
+      }
+    });
+    ipcMain.on(RPCMethods.replyWindow, async (event, ...args) => {
+      try {
+        console.log("Main: ReplyWindow: " + args)
+
+        let bw = BrowserWindow.fromId(args[1]);
+        if (bw) { 
+          bw.webContents.send(RPCMethods.replyWindow, ...args);
+        }
+        else {
+          throw "browser window " + args[1] + ' does not exist.';
+        }
+      }
+      catch (ex) {
+        console.log(ex);
+        return null;
+      }
+    });
+
   }
 
 }
 
 let _mainProcess: MainProcess;
 
-app.on('ready', () => {
+app.whenReady().then(() => {
   _mainProcess = new MainProcess();
 });
 app.on('window-all-closed', () => {

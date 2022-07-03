@@ -34,13 +34,13 @@ export class ConfigFile {
       lines.forEach((line, i, arr) => {
         let index = line.indexOf("=");
         let key = line.substring(0, index);
-        let val = line.substring(index);
-        console.log('k = ' + key + ' v = ' + val);
+        let val = line.substring(index + 1);
         if (that._pairs[key] !== undefined) {
+          console.log('k = ' + key + ' v = ' + val);
           that._pairs[key]._setter(val);
         }
-        else{
-          console.log("key " + key + " was not found in the kvp : " + that._pairs);
+        else {
+          console.log("key '" + key + "' was not found " );
         }
       });
     }

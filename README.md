@@ -1,17 +1,11 @@
 
-
-
-TODO:
-1. Back/forward
-2. Settings for folder.
-3. Get AppImage to work.
-
 # Sketchy
 
-This is an example of a desktop only electron app that contains server-side (native) control logic on the client. The application can be packaged
-into a single EXE, DEB, RPM or AppImage. 
-This was designed to be an easy way to make desktop apps in JS. It attempts to be like the .NET framework, but is completely cross-platform, and has the awesome power of React and Chromium.
+A desktop only electron app that functions somewhat like .NET. It has the added benefit of being able to operate with a remote (cloud) filesystem. 
 
+The application can be packaged into a single EXE, DEB, RPM or AppImage. 
+
+This was designed to be an easy way to make desktop apps in JS. It attempts to mimic desktop windowing like in the .NET framework.
 
 ## Building
 

@@ -62,7 +62,7 @@ export class ElectronWindow {
       Remote.send(RPCMethods.replyWindow, to, from, func, res);
     });
     Remote.receiveBind(RPCMethods.windowEvent, (...args: any[]) => {
-      //Window events from OTHER windows
+      //Window events from other windows
       console.log("Renderer:WindowEvent:" + args)
 
       let winId: number = args[0];

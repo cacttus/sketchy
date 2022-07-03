@@ -47,10 +47,6 @@ export class MainWindow extends ElectronWindow {
     that.registerKeys();
 
     that._settingsWindow = await Remote.createWindow("SettingsWindow.js");
-    // await Remote.onWindow(that._settingsWindow, WindowEvent.onClose, async () => {
-    //   await that.updateSettings();
-    // });
-
     //For some reason updateSettings() here is invalid. Most likely it has to do with how the init() method is injected on the server().
     //await this.updateSettings();
   }

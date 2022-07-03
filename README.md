@@ -29,10 +29,9 @@ To create a new window, implement `ElectronWindow` and override the virtual meth
 
 `render()` specifically will return the contents of your window as a JSX element.
 
-* _Note that the ElectronWindow actually wraps the window contents inside a react Root element and bootstrap element. The bootstrap flex box has full-screen width, zero padding, and sizes proportionally to the window._
+* _Note: make sure to add any new *.tsx windows to webpack.config.js_
 
 ```
-/* Note: as this currently is - make sure to add any new *.tsx windows to webpack.config.js! */
 
 import ElectronWindow from './ElectronWindow';
 import Remote from './Remote';

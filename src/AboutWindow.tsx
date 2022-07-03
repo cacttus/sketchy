@@ -19,22 +19,23 @@ export class AboutWindow extends ElectronWindow {
     return x;
   }
   protected override render(): JSX.Element {
-    let that=this;
+    let that = this;
     return (
       <Form>
         <h2><i>Sketchy</i></h2>
         <h3>Controls</h3>
         <ul>
-          <b>Left Arrow</b><br/>
-          <p>Previous Image</p>
-          <b>Right Arrow</b><br/>
-          <p>Next Image (random), or next image if in history.</p>
-          <b>Spacebar</b><br/>
-          <p>Stop/Start timer.</p>
+          <p>Space = Stop/Start timer.</p >
+          <p>Left = Previous Image</p>
+          <p>Right, n = Next Image (random), or next image if in history.</p>
+          <p>Up = Add 30s.</p>
+          <p>Down = Remove 30s.</p>
+          <p>r = Reset timer</p>
+          <p>c = Clear History</p>
         </ul>
         <Form.Group>
           <div className="modal-footer">
-            <button type="button" className="btn btn-primary" onClick={() => {  that.close(); }}>OK</button>
+            <button type="button" className="btn btn-primary" onClick={() => { that.close(); }}>OK</button>
           </div>
         </Form.Group>
       </Form>

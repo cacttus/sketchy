@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, Menu, MenuItem, dialog, OpenDialogOptions } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import { RPCMethods } from "./Remote"
+import { RPCMethods, ErrorCode, WindowEvent } from "./Remote"
 import { Stats } from 'fs'
 
 /**
@@ -153,6 +153,11 @@ class MainProcess {
     //This will need to change vs debug / release
     //also __dirname
     return path.join(app.getAppPath(), '/dist');
+  }
+  private static notifyAllWindows(winId: number, event: string, ...args: any[]): void {
+    BrowserWindow.getAllWindows().forEach((e, i) => {
+      e.webContents.send(RPCMethods.windowEvent, winId, event, ...args);
+    });
   }
   private static registerCallbacks(): void {
     ipcMain.handle(RPCMethods.showOpenDialog, async (event, arg) => {
@@ -323,9 +328,11 @@ class MainProcess {
         var bw = BrowserWindow.fromId(arg[0]);
         if (arg[1]) {
           bw.show();
+          MainProcess.notifyAllWindows(arg[0], WindowEvent.onShow, true);
         }
         else {
           bw.hide();
+          MainProcess.notifyAllWindows(arg[0], WindowEvent.onShow, false);
         }
       }
       catch (ex) {
@@ -338,6 +345,7 @@ class MainProcess {
         console.log("Closing window " + arg[0]);
         var bw = BrowserWindow.fromId(arg[0]);
         bw.close();
+        MainProcess.notifyAllWindows(arg[0], WindowEvent.onClose);
       }
       catch (ex) {
         console.log(ex);
@@ -385,8 +393,8 @@ class MainProcess {
         console.log("Main: ReplyWindow: " + args)
 
         let bw = BrowserWindow.fromId(args[1]);
-        if (bw) { 
-          bw.webContents.send(RPCMethods.replyWindow, ...args);
+        if (bw) {
+          bw.webContents.send(RPCMethods.replyWindow, ErrorCode.Success, ...args);
         }
         else {
           throw "browser window " + args[1] + ' does not exist.';

@@ -1,6 +1,7 @@
 import { IpcRenderer } from "electron";
 import { Stats } from "webpack";
 
+//RPC methods that we send to the SERVER (main.js)
 export class RPCMethods {
   public static test: string = "test";
   public static showOpenDialog: string = "showOpenDialog";
@@ -24,10 +25,15 @@ export class RPCMethods {
   public static path_resolve: string = "path_resolve";
   public static callWindow: string = "callWindow";
   public static replyWindow: string = "replyWindow";
-
+  public static windowEvent: string = "windowEvent";
   public static onResize: string = 'onResize';
 }
-
+//Events received from other windows
+export class WindowEvent {
+  public static onShow: string = "onShow";//show & hide
+  public static onClose: string = "onClose";
+  public static onResize: string = "onResize"; //w/h
+}
 //This is a copy of ELectron's interface
 export class FileFilter {
 
@@ -35,6 +41,11 @@ export class FileFilter {
 
   extensions: string[];
   name: string;
+}
+
+export class ErrorCode {
+  public static Success: 0;
+  public static WindowDoesNotExist: 1;
 }
 
 export class Remote {
@@ -45,8 +56,14 @@ export class Remote {
     // Send event to main.
     (window as any).api.send(event, ...args);
   }
-  public static receive(event: string, callback: (...args: any[]) => void): void {
-    (window as any).api.receive(event, (event: Electron.IpcRendererEvent, ...args: any[]) => {
+  public static receiveBind(event: string, callback: (...args: any[]) => void): void {
+    (window as any).api.receiveBind(event, (event: Electron.IpcRendererEvent, ...args: any[]) => {
+      // "spread syntax" (va_args) and just pass it in. Pretty neat.
+      callback(...args);
+    });
+  }
+  public static receiveOnce(event: string, callback: (...args: any[]) => void): void {
+    (window as any).api.receiveOnce(event, (event: Electron.IpcRendererEvent, ...args: any[]) => {
       // "spread syntax" (va_args) and just pass it in. Pretty neat.
       callback(...args);
     });
@@ -146,5 +163,7 @@ export class Remote {
   public static isDirectory(path: string): Promise<boolean> {
     return (window as any).api.callSync(RPCMethods.isDirectory, path)
   }
+  public static onWindow(windowId: number, ev: string, lambda: any) {
 
+  }
 }

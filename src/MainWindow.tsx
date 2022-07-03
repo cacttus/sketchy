@@ -4,7 +4,7 @@ import $ from 'jquery';
 import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import * as Mousetrap from 'mousetrap';
-import { Remote } from "./Remote";
+import { Remote, WindowEvent } from "./Remote";
 import { ElectronWindow, WindowCreateInfo } from "./ElectronWindow";
 import { Controls } from "./Controls";
 import './MaterialIcons.scss';
@@ -30,9 +30,8 @@ export class MainWindow extends ElectronWindow {
   private _progress: number = 60;
   private _fileCount: number = -1;
   private _history: Array<string> = new Array<string>(); //image history 
-  //private _historyHash: Array<number> = new Array<number>();
   private _historyFileIndexes: Array<number> = new Array<number>();
-  private _historyIndex: number = -1;
+  private _historyIndex: number = 0;
   private _progressBar = () => { return $('#progressbar') };
   private _showNavTimer: NodeJS.Timer = null;
   private _showMsgTimer: NodeJS.Timer = null;
@@ -48,7 +47,12 @@ export class MainWindow extends ElectronWindow {
     that.registerKeys();
 
     that._settingsWindow = await Remote.createWindow("SettingsWindow.js");
-    this.updateSettings();
+    // await Remote.onWindow(that._settingsWindow, WindowEvent.onClose, async () => {
+    //   await that.updateSettings();
+    // });
+
+    //For some reason updateSettings() here is invalid. Most likely it has to do with how the init() method is injected on the server().
+    //await this.updateSettings();
   }
   private async updateSettings(): Promise<void> {
     let that = this;
@@ -73,6 +77,25 @@ export class MainWindow extends ElectronWindow {
 
       this.message("..File count = " + that._fileCount);
     }
+  }
+  protected override  receiveEvent(winId: number, winEvent: string, ...args: any[]): void {
+    //TODO:
+    switch (winId) {
+      case this._settingsWindow:
+        switch (winEvent) {
+          case WindowEvent.onClose:
+            this.updateSettings();
+            break;
+          case WindowEvent.onShow:
+            if(args && args.length && args[0] === false){
+              this.updateSettings();
+            }
+            break;
+        }
+        console.log("Got settings window event " + winEvent + " args: " + args);
+        break;
+    }
+
   }
   protected override getCreateInfo?(): WindowCreateInfo {
     let x = new WindowCreateInfo();
@@ -127,7 +150,11 @@ export class MainWindow extends ElectronWindow {
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
                     <Dropdown.Item onClick={() => { that.randomImage(); }}>Random Image <span className="material-icons">face</span></Dropdown.Item>
-                    <Dropdown.Item onClick={async () => { await Remote.showWindow(that._settingsWindow, true); }}>Settings</Dropdown.Item>
+                    <Dropdown.Item onClick={async () => {
+                      await Remote.showWindow(that._settingsWindow, true);
+
+
+                    }}>Settings</Dropdown.Item>
                     <Dropdown.Item onClick={() => { Remote.closeWindow(that.winId()); }}>Exit</Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
@@ -138,7 +165,10 @@ export class MainWindow extends ElectronWindow {
                     Help
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
-                    <Dropdown.Item onClick={async () => { await Remote.createWindow("AboutWindow.js"); }}>About</Dropdown.Item>
+                    <Dropdown.Item onClick={async () => {
+                      let aw = await Remote.createWindow("AboutWindow.js");
+                      Remote.showWindow(aw, true);
+                    }}>About</Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
               </Nav.Item>
@@ -150,7 +180,7 @@ export class MainWindow extends ElectronWindow {
           <div className="row justify-content-center fixed-bottom">
             <div className="col-12">
               <div id="timelabel" style={{ color: '#F9F9F9', opacity: 0.5, display: 'none', backgroundColor: '#212121' }}>time</div>
-              <div id="progressbar" style={{ height: '.1em', backgroundColor: '#770000', opacity: 0.5 }} role="progressbar" aria-valuemin={0} aria-valuemax={100}></div>
+              <div id="progressbar" style={{ height: '.3em', backgroundColor: '#770000', opacity: 0.5 }} role="progressbar" aria-valuemin={0} aria-valuemax={100}></div>
             </div>
           </div>
         </Form>
@@ -165,11 +195,21 @@ export class MainWindow extends ElectronWindow {
     this.showNav(2000);
     this.showMsg(2000);
   }
+  private clearHistory(): void {
+    this._history = new Array<string>(); //image history 
+    this._historyFileIndexes = new Array<number>();
+    this._historyIndex = 0;
+    this.message("Cleared history.")
+  }
   private async nextImage(): Promise<void> {
     let img: string = "";
     this._progressBar().css('width', '100%');
 
-    if (this._historyIndex === this._history.length - 1 || this._historyIndex === -1) {
+    this._historyIndex += 1;
+
+    console.log("history:" + this._history.length + " index:" + this._historyIndex)
+
+    if (this._historyIndex >= this._history.length) {
       img = await this.randomImage();
 
       if (img === "") {
@@ -177,26 +217,28 @@ export class MainWindow extends ElectronWindow {
         this.stop();
       }
       else {
+        console.log("next image: " + img);
         this._history.push(img);
         this._historyIndex = this._history.length - 1;
       }
     }
     else {
-      img = this._history[this._historyIndex + 1];
+      img = this._history[this._historyIndex];
     }
 
     if (await Remote.fileExists(img)) {
-      this.setImageFromFile(img);
+      await this.setImageFromFile(img);
     }
   }
-  private prevImage(): void {
+  private async prevImage() {
     this.pause();
     this._historyIndex -= 1;
+
     if (this._historyIndex < 0) {
       this._historyIndex = 0;
     }
     if (this._historyIndex < this._history.length) {
-      this.setImageFromFile(this._history[this._historyIndex]);
+      await this.setImageFromFile(this._history[this._historyIndex]);
     }
   }
   private parseMilliseconds(millis: number, h: { val: number }, m: { val: number }, s: { val: number }, u: { val: number }): void {
@@ -247,12 +289,12 @@ export class MainWindow extends ElectronWindow {
       that.nextImage();
       that.reset();
     })
-    Mousetrap.bind('right', () => {
-      that.nextImage();
+    Mousetrap.bind('right', async () => {
+      await that.nextImage();
       that.reset();
     })
-    Mousetrap.bind('left', () => {
-      that.prevImage();
+    Mousetrap.bind('left', async () => {
+      await that.prevImage();
     })
     Mousetrap.bind('up', () => {
       that.addTime(30);
@@ -269,13 +311,15 @@ export class MainWindow extends ElectronWindow {
     Mousetrap.bind('r', () => {
       that.reset();
     })
-    Mousetrap.bind('space', () => {
+    Mousetrap.bind('c', () => {
+      that.clearHistory();
+    })
+    Mousetrap.bind('space', async () => {
       if (that._state === State.start) {
         that.pause();
       }
       else {
         //Only update when we start/stop.
-        that.updateSettings();
         that.start();
       }
     })
@@ -290,7 +334,10 @@ export class MainWindow extends ElectronWindow {
     if (that._state === State.start) {
     }
     else if (that._state === State.stop) {
+      console.log("starting");
       that.nextImage();
+
+      that._curTime = that._maxTime;
 
       if (that._imageTimer !== null) {
         clearInterval(that._imageTimer);
@@ -379,6 +426,7 @@ export class MainWindow extends ElectronWindow {
   }
   private async setImageFromFile(fullPath: string): Promise<void> {
     let that = this;
+    console.log(this._history)
     //open a file and set the image tag.
     await Remote.fs_access(fullPath).then(async () => {
       await Remote.fs_readFile(fullPath).then((value: Buffer) => {

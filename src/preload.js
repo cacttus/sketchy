@@ -8,7 +8,11 @@ contextBridge.exposeInMainWorld("api", {
   send: (event, ...args) => {
     ipcRenderer.send(event, ...args);
   },
-  receive: (event, callback) => {
+  //Note: once  - vs . on - once will deregister the event.
+  receiveOnce: (event, callback) => {
+    ipcRenderer.once(event, callback);
+  },
+  receiveBind: (event, callback) => {
     ipcRenderer.on(event, callback);
   }
 });

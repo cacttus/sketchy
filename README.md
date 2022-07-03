@@ -1,11 +1,7 @@
 
 # Sketchy
 
-A desktop only electron app that functions somewhat like .NET. It has the added benefit of being able to operate with a remote (cloud) filesystem. 
-
-The application can be packaged into a single EXE, DEB, RPM or AppImage. 
-
-This was designed to be an easy way to make desktop apps in JS. It attempts to mimic desktop windowing like in the .NET framework.
+A desktop only electron app that functions somewhat like .NET. 
 
 ## Building
 
@@ -36,34 +32,47 @@ To create a new window, implement `ElectronWindow` and override the virtual meth
 * _Note that the ElectronWindow actually wraps the window contents inside a react Root element and bootstrap element. The bootstrap flex box has full-screen width, zero padding, and sizes proportionally to the window._
 
 ```
+/* Note: as this currently is - make sure to add any new *.tsx windows to webpack.config.js! */
+
 import ElectronWindow from './ElectronWindow';
 import Remote from './Remote';
 
 export class MyWindow extends ElectronWindow {
-  
   public constructor() {
     super();
   }
-  
-  protected override title() : string { return "MyWindow!"; }
-  protected override width() : number { return "800"; }
-  protected override height() : number { return "600"; }
+  public override async init() : Promise<void>{
+    //on initialize
+  }
+  protected override onResize(w:number,h:number){
+    //resize event
+  }
+  //Get events from this, or other windows
+  protected override receiveEvent(winId: number, winEvent: string, ...args: any[]): void { 
+    // Get events from windows
+  }
+  //This is the information that the window will be created with
+  protected override getCreateInfo?(): WindowCreateInfo {
+    let x = new WindowCreateInfo();
+    x._height = 800;
+    x._width = 600;
+    x._title = "Sketchy";
+    return x;
+  }
+  // Main React render
   protected override render() : JSX.Element {
     return (
       <div>Hello Window!</div>
     );
   }
-  
+  //Other stuff this API can do:
   private myCreateChildWindow() : void { 
-    Remote.createWindow("MyChildWindow.js");
-    //Another way
-    Remote.createWindowDetails("MyWindow", "MyWindow.js", 800, 600, true);
+    let win = Remote.createWindow("MyChildWindow.js");
+    Remote.showWindow(win, true)
   }
-  
   private myReadFile() : Promise<Buffer> { 
     return Remote.fs_readFile("myFile.txt");
   }
-
 }
 ```
 
@@ -83,11 +92,13 @@ render.entry = {
 
 ## Bundling  (.exe, .rpm, .deb, appimage,  etc.)
 
-To bundle the application into an .exe, .rpm, .deb, AppImage, or other standalone format run:
+1. In Linux run `bundle.sh` to create a production build and bundle.
 
-`npx electron-builder`
+2. or, after a build, run:
 
-After building this application. (Make sure `build-dev.sh` is run first so contents are copied.)
+  `npx electron-builder`
+
+  After building this application. (Make sure `build-dev.sh` is run first so contents are copied.)
 
 Binary is placed in `/dist/`.
 
@@ -95,7 +106,3 @@ You can configure electron-builder in the `build` property within `package.json`
 _Note: the extends:'null' is required to prevent electron-builder from looking at /public/electron.js_
 
 See the documentation for [electron-builder](https://www.electron.build/) for more info.
-
-_TODO: make a release script that runs electron-builder._
-
-(Using: Nodejs, Electron, Typescipt, jquery, React, Bootstrap, Webpack)

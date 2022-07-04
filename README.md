@@ -31,7 +31,7 @@ To create a new window, implement `ElectronWindow` and override the virtual meth
 
 * _Note: make sure to add any new *.tsx windows to webpack.config.js_
 
-```
+```javascript
 
 import ElectronWindow from './ElectronWindow';
 import Remote from './Remote';
@@ -79,7 +79,7 @@ As of now, you must add your `Window.tsx` to `webpack.config.js`
 
 _TODO: make this automatic in the future._
 
-```
+```javascript
 //webpack.config.js..
 ..
 render.entry = {

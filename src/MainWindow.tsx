@@ -11,7 +11,7 @@ import './MaterialIcons.scss';
 import { Form, Button, InputGroup, FormControl, FormLabel, ProgressBar, Dropdown, Nav, Toast } from 'react-bootstrap';
 import 'ts-keycode-enum'
 import { Key } from "ts-keycode-enum";
-import { clear } from "console";
+import { clear, log } from "console";
 import { Globals } from './Globals';
 import { vec2 } from "./Math";
 import { isUint16Array } from "util/types";
@@ -24,10 +24,10 @@ enum State { start, stop, pause };
 export class MainWindow extends ElectronWindow {
   private _state: State = State.stop;
   private _maxTime: number = 5000; //millis -  5min
+  private _minTime: number = 1000; //millis
   private _curTime: number = this._maxTime; //millis -  5min
   private _imageTimer: NodeJS.Timer = null;
   private _dataRootPath: string = './testdata';
-  private _progress: number = 60;
   private _fileCount: number = -1;
   private _history: Array<string> = new Array<string>(); //image history 
   private _historyFileIndexes: Array<number> = new Array<number>();
@@ -37,6 +37,10 @@ export class MainWindow extends ElectronWindow {
   private _showMsgTimer: NodeJS.Timer = null;
   private _imgSize: vec2 = new vec2();
   private _settingsWindow: number = -1;
+  private _repeat: boolean = false;
+  private _cachedFiles: Array<string> = new Array<string>();
+  private _cachedFileIndexes: Array<number> = new Array<number>();
+  private _cfileCacheCount: number = 14;//How many files we cache.
 
   public constructor() {
     super();
@@ -48,7 +52,6 @@ export class MainWindow extends ElectronWindow {
 
     that._settingsWindow = await Remote.createWindow("SettingsWindow.js");
     //For some reason updateSettings() here is invalid. Most likely it has to do with how the init() method is injected on the server().
-    //await this.updateSettings();
   }
   private async updateSettings(): Promise<void> {
     let that = this;
@@ -58,7 +61,13 @@ export class MainWindow extends ElectronWindow {
     let secs: number = await this.callWindow(this._settingsWindow, "timeSeconds");
     that._maxTime = mins * 60 * 1000 + secs * 1000;
     let root = await this.callWindow(this._settingsWindow, "directory");
-    //TODO: repeat;
+    that._cfileCacheCount = await this.callWindow(this._settingsWindow, "cache");
+    let repeat = await this.callWindow(this._settingsWindow, "repeat");
+    
+    if (repeat != that._repeat) {
+      that._repeat = repeat;
+      this.clearCache();
+    }
 
     console.log("Got mins=" + mins + " secs=" + secs + " dir=" + root);
 
@@ -67,9 +76,10 @@ export class MainWindow extends ElectronWindow {
 
       console.log("..rootpath = " + that._dataRootPath);
 
+      //Get file count
       let fc = { val: that._fileCount };
-      await MainWindow.traverseDirectory(that._dataRootPath, true, 0, fc, { val: null });
-      that._fileCount = fc.val;
+      await MainWindow.traverseDirectory(that._dataRootPath, true, [], fc, { vals: [] });
+      that._fileCount = fc.val;//not sure if this line is needed
 
       this.message("..File count = " + that._fileCount);
     }
@@ -78,17 +88,20 @@ export class MainWindow extends ElectronWindow {
     //TODO:
     switch (winId) {
       case this._settingsWindow:
+        console.log("Got settings window event " + winEvent + " args: " + args);
         switch (winEvent) {
+          case WindowEvent.onCreate:
+            this.updateSettings();
+            break;
           case WindowEvent.onClose:
             this.updateSettings();
             break;
           case WindowEvent.onShow:
-            if(args && args.length && args[0] === false){
+            if (args && args.length && args[0] === false) {
               this.updateSettings();
             }
             break;
         }
-        console.log("Got settings window event " + winEvent + " args: " + args);
         break;
     }
 
@@ -148,8 +161,6 @@ export class MainWindow extends ElectronWindow {
                     <Dropdown.Item onClick={() => { that.randomImage(); }}>Random Image <span className="material-icons">face</span></Dropdown.Item>
                     <Dropdown.Item onClick={async () => {
                       await Remote.showWindow(that._settingsWindow, true);
-
-
                     }}>Settings</Dropdown.Item>
                     <Dropdown.Item onClick={() => { Remote.closeWindow(that.winId()); }}>Exit</Dropdown.Item>
                   </Dropdown.Menu>
@@ -195,7 +206,12 @@ export class MainWindow extends ElectronWindow {
     this._history = new Array<string>(); //image history 
     this._historyFileIndexes = new Array<number>();
     this._historyIndex = 0;
-    this.message("Cleared history.")
+    this.message("Cleared history.");
+  }
+  private clearCache(): void {
+    let that = this;
+    that._cachedFiles = new Array<string>();
+    that._cachedFileIndexes = new Array<number>();
   }
   private async nextImage(): Promise<void> {
     let img: string = "";
@@ -203,7 +219,7 @@ export class MainWindow extends ElectronWindow {
 
     this._historyIndex += 1;
 
-    console.log("history:" + this._history.length + " index:" + this._historyIndex)
+    //console.log("history:" + this._history.length + " index:" + this._historyIndex)
 
     if (this._historyIndex >= this._history.length) {
       img = await this.randomImage();
@@ -213,7 +229,6 @@ export class MainWindow extends ElectronWindow {
         this.stop();
       }
       else {
-        console.log("next image: " + img);
         this._history.push(img);
         this._historyIndex = this._history.length - 1;
       }
@@ -252,8 +267,8 @@ export class MainWindow extends ElectronWindow {
   private addTime(seconds: number): void {
     let that = this;
     that._maxTime += seconds * 1000;
-    if (that._maxTime < 5000) {
-      that._maxTime = 5000;
+    if (that._maxTime < that._minTime) {
+      that._maxTime = that._minTime;
     }
     if (that._maxTime <= that._curTime) {
       that._curTime = that._maxTime;
@@ -309,6 +324,7 @@ export class MainWindow extends ElectronWindow {
     })
     Mousetrap.bind('c', () => {
       that.clearHistory();
+      that.clearCache();
     })
     Mousetrap.bind('space', async () => {
       if (that._state === State.start) {
@@ -422,7 +438,7 @@ export class MainWindow extends ElectronWindow {
   }
   private async setImageFromFile(fullPath: string): Promise<void> {
     let that = this;
-    console.log(this._history)
+    //console.log(this._history)
     //open a file and set the image tag.
     await Remote.fs_access(fullPath).then(async () => {
       await Remote.fs_readFile(fullPath).then((value: Buffer) => {
@@ -449,42 +465,66 @@ export class MainWindow extends ElectronWindow {
 
     //TODO: if Settings.Repeat == true
 
+    let selected: string = '';
 
-    let selected = { val: '' };
+    //console.log("HISTORY: " + that._historyFileIndexes.length + ", " + that._fileCount)
+    //console.log("CACHE: " + that._cachedFiles.length + ", " + that._cachedFileIndexes.length)
+    //The whole thing is done when history file indexes === filecount
+    if ((Globals.isNull(that._cachedFiles) || that._cachedFiles.length === 0) && (that._historyFileIndexes.length < that._fileCount)) {
+      console.log("..Out of cached images...Creating random vals, cachesize=" + that._cfileCacheCount)
 
-    if (that._historyFileIndexes.length === that._fileCount) {
-      this.message("No files remain");
-    }
-    else {
+      that._cachedFileIndexes = new Array<number>();
 
-      //Dumb algorithm which would approach O(infinity). The correct approach would be to
+      //Dumb algorithm which approaches O(infinity). The correct approach would be to
       //divide the search space into a btree, and prune nodes that have been selected. Then we can use a random
       //binary value to search each level of the tree. Honestly, I don't intend on running this on millions of images, so this will suffice for now
-
-      let rfile = 0;
-      while (true) {
-        rfile = Math.floor(Math.random() * that._fileCount);
-        if (that._historyFileIndexes.indexOf(rfile) === -1) {
-          that._historyFileIndexes.push(rfile);
-          break;
+      for (let iimg = 0; (iimg < that._cfileCacheCount) && (iimg < that._fileCount); ++iimg) {
+        let rfile = 0;
+        while (true) {
+          rfile = Math.floor(Math.random() * that._fileCount);//[0,max)
+          if (
+            (that._repeat === true) ||
+            (
+              (that._historyFileIndexes.indexOf(rfile) === -1)
+              && (that._cachedFileIndexes.indexOf(rfile) === -1)
+            )
+          ) {
+            that._cachedFileIndexes.push(rfile);
+            break;
+          }
+          if ((that._historyFileIndexes.length + that._cachedFileIndexes.length) >= that._fileCount) {
+            //no more images
+            break;
+          }
         }
       }
 
-      await MainWindow.traverseDirectory(that._dataRootPath, false, rfile, { val: that._fileCount }, selected);
-
-      if (selected.val === '') {
-        console.log("selected was empty, index = " + rfile)
+      that._cachedFiles = new Array<string>();
+      for (let icf = 0; icf < that._cachedFileIndexes.length; icf++) {
+        that._cachedFiles.push('<placeholder>');
       }
+      let fileList = { vals: that._cachedFiles };
+
+      console.log("...Traversing: " + that._cachedFileIndexes)
+      await MainWindow.traverseDirectory(that._dataRootPath, false, that._cachedFileIndexes, { val: that._fileCount }, fileList, null, null);
+      console.log("...File list: (" + fileList.vals.length + "):  " + fileList.vals);
+      console.log("...CACHE: " + that._cachedFiles.length + ", cached index count:" + that._cachedFileIndexes.length)
     }
-    return selected.val;
+
+    if (that._cachedFiles.length) {
+      selected = that._cachedFiles[0];
+      that._cachedFiles.splice(0, 1);
+      that._historyFileIndexes.push(that._cachedFileIndexes[0]);
+      that._cachedFileIndexes.splice(0, 1);
+    }
+
+    if (selected === '') {
+      console.log("selected was empty, cached files = " + that._cachedFiles)
+    }
+    return selected;
   }
-  // private static async getFiles(dir: string): Promise<Array<string>> {
-  //   let flist: Array<string> = new Array<string>();
-  //   let fq: string = await Remote.path_join(await Remote.process_cwd(), dir);
-  //   return await Remote.fs_readdir(fq);
-  // }
-  private static async traverseDirectory(dir: string, countFilesOnly: boolean, selectedFileIndex: number,
-    fileCount: { val: number }, selectedFile: { val: string }, curFileIndex: { val: number } = null): Promise<void> {
+  private static async traverseDirectory(dir: string, countFilesOnly: boolean, selectedFileIndexes: Array<number>,
+    fileCount: { val: number }, selectedFiles: { vals: Array<string> }, curFileIndex: { val: number } = null, selectedFilesCount: { val: number } = null): Promise<void> {
     //CountFilesOnly : true = count the files, fileCount must be zero
     //               : false = select a file given the selected index
     if (dir === undefined) {
@@ -494,7 +534,8 @@ export class MainWindow extends ElectronWindow {
       curFileIndex = { val: 0 };
     }
     //Check if we already selected something.
-    if ((countFilesOnly === false) && Globals.isNotNull(selectedFile.val) && (selectedFile.val !== '')) {
+    if ((countFilesOnly === false) && (Globals.isNotNull(selectedFilesCount) && selectedFilesCount.val >= selectedFileIndexes.length)) {
+      console.log("Exiting : " + selectedFiles.vals.length + " == " + selectedFileIndexes.length);
       return;
     }
 
@@ -509,31 +550,38 @@ export class MainWindow extends ElectronWindow {
       for (let xi = 0; xi < files.length; xi++) {
         let file_or_dir = files[xi];
 
-        //console.log(root_dir + "   " + file_or_dir);
+        //console.log("  Traversing: " + root_dir + "   " + file_or_dir);
 
         let path = await Remote.path_join(root_dir, file_or_dir);
 
         if (await Remote.isFile(path) === true) {
           if (countFilesOnly) {
             if (fileCount.val === -1) {
-              fileCount.val = 0;
+              fileCount.val = 0; //reset the thing
             }
             fileCount.val++;
           }
-          else if (curFileIndex.val === selectedFileIndex) {
-            selectedFile.val = path;
-            return;
-          }
           else {
+            let ind = selectedFileIndexes.indexOf(curFileIndex.val);
+            if (ind !== -1) {
+              //Keep these in the same order as the input index permuation
+              selectedFiles.vals[ind] = path;
+              if (selectedFilesCount === null) {
+                selectedFilesCount = { val: 0 };
+              }
+              selectedFilesCount.val++;
+            }
+
             curFileIndex.val++;
           }
         }
 
         if (await Remote.isDirectory(path) === true) {
-          await MainWindow.traverseDirectory(path, countFilesOnly, selectedFileIndex, fileCount, selectedFile, curFileIndex);
+          await MainWindow.traverseDirectory(path, countFilesOnly, selectedFileIndexes, fileCount, selectedFiles, curFileIndex, selectedFilesCount);
 
           //Check if we already selected something.
-          if ((countFilesOnly === false) && Globals.isNotNull(selectedFile.val) && (selectedFile.val !== '')) {
+          if ((countFilesOnly === false) && (Globals.isNotNull(selectedFilesCount) && selectedFilesCount.val >= selectedFileIndexes.length)) {
+            console.log("Exiting : " + selectedFiles.vals.length + " == " + selectedFileIndexes.length);
             return;
           }
         }

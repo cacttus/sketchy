@@ -23,6 +23,7 @@ export class SettingsWindow extends ElectronWindow {
   private _timeSecondsCtl: string = "time_seconds";
   private _repeatCtl: string = "repeat";
   private _directoryCtl: string = "directory";
+  private _cacheCtl: string = "cache_size";
 
   public constructor() {
     super();
@@ -48,6 +49,9 @@ export class SettingsWindow extends ElectronWindow {
       , "directory": new ConfigFilePair(
         (val: string) => { $('#' + that._directoryCtl).val(val) },
         (key: string) => { return $('#' + that._directoryCtl).prop("value"); })
+      , "cache_size": new ConfigFilePair(
+        (val: string) => { $('#' + that._cacheCtl).val(val) },
+        (key: string) => { return $('#' + that._cacheCtl).val().toString(); })
     });
     await this.load();
   }
@@ -62,6 +66,9 @@ export class SettingsWindow extends ElectronWindow {
   }
   public directory(): string {
     return $('#' + this._directoryCtl).val() as string;
+  }
+  public cache(): string {
+    return $('#' + this._cacheCtl).val() as string;
   }
   protected override getCreateInfo?(): WindowCreateInfo {
     let x = new WindowCreateInfo();
@@ -83,7 +90,7 @@ export class SettingsWindow extends ElectronWindow {
             </Col>
             <Col xs={12} sm={10} md={10} lg={10}>
               <InputGroup className="mb-3">
-                <Form.Control id="directory" placeholder="./" type="text" onChange={() => { that.save(); }} />
+                <Form.Control id="directory" defaultValue="./" type="text" onChange={() => { that.save(); }} />
                 < Button id="selectDirectory" onClick={async () => {
                   let cv = $('#directory').text();
                   let ret = await Remote.showOpenDialog("Select Folder", cv, true, false, null, false);
@@ -102,8 +109,18 @@ export class SettingsWindow extends ElectronWindow {
             </Col>
             <Col xs={12} sm={11} md={11} lg={11}>
               <InputGroup className="mb-3">
-                <Form.Control id="time_minutes" placeholder="3" type="number" min="0" max="100" onChange={() => { that.save(); }} />
-                <Form.Control id="time_seconds" placeholder="3" type="number" min="0" max="100" onChange={() => { that.save(); }} />
+                <Form.Control id="time_minutes" defaultValue={3} type="number" min="0" max="100" onChange={() => { that.save(); }} />
+                <Form.Control id="time_seconds" defaultValue={0} type="number" min="0" max="100" onChange={() => { that.save(); }} />
+              </InputGroup>
+            </Col>
+          </Row>
+          <Row>
+            <Col xs={12} sm={1} md={1} lg={1}>
+              <Form.Label>Cache Size:</Form.Label>
+            </Col>
+            <Col xs={12} sm={11} md={11} lg={11}>
+              <InputGroup className="mb-3">
+                <Form.Control id="cache_size" defaultValue={100} type="number" min="1" max="10000" onChange={() => { that.save(); }} />
               </InputGroup>
             </Col>
           </Row>

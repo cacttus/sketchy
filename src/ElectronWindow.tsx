@@ -122,6 +122,7 @@ export class ElectronWindow {
   }
   protected sendEvent(event: string, ...args: any[]): void {
     //Broadcast a close/show/open event to toher windows
+    Remote.send(RPCMethods.windowEvent, this.winId(), event, ...args);
   }
   protected viewportWidth(): number {
     //Width of window viewport, "client width" in Windows. 

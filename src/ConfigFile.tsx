@@ -40,19 +40,24 @@ export class ConfigFile {
           that._pairs[key]._setter(val);
         }
         else {
-          console.log("key '" + key + "' was not found " );
+          console.log("key '" + key + "' was not found ");
         }
       });
     }
+    else {
+      //create 
+      await this.save(true);
+    }
   }
-  public async save(): Promise<void> {
+  public async save(defaults: boolean = false): Promise<void> {
     let filepath: string = this._filepath;
 
     console.log("Saving settings " + filepath);
     let settings: string = "";
 
     for (var key in this._pairs) {
-      let val = this._pairs[key]._getter();
+      let val = '';
+      val = this._pairs[key]._getter();
       settings += key + "=" + val + "\n";
     }
 

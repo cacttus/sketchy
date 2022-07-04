@@ -22,6 +22,9 @@ export class Globals {
     }
   }
   public static isNotNull(val:any){
-    return val !== null && val !== undefined;
+    return !Globals.isNull(val);
+  }
+  public static isNull(val:any){
+    return val === null || val === undefined;
   }
 }

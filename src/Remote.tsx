@@ -30,6 +30,7 @@ export class RPCMethods {
 }
 //Events received from other windows
 export class WindowEvent {
+  public static onCreate: string = "onCreate";
   public static onShow: string = "onShow";//show & hide
   public static onClose: string = "onClose";
   public static onResize: string = "onResize"; //w/h

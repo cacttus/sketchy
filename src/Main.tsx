@@ -85,16 +85,16 @@ class MainProcess {
         "   console.log(\"Exported Webpack App is: \"); " + nl +
         "   console.log(ElectronApp); " + nl +
         "   ___win = new ElectronApp." + className + ";" + nl +
-        "   ___win.init();" + nl +
+        "   ___win.init().then(()=>{  ___win.sendEvent('onCreate');  });" + nl +
+        "   " + nl +
         " }; " + nl +
         ""
-      );
+      )
     });
 
     bw.addListener('resize', (e: Electron.Event, b: boolean) => {
       bw.webContents.send(RPCMethods.onResize, bw.getSize()[0], bw.getSize()[1]);
     });
-
     return bw;
   };
   public ExitApp(): void {
@@ -154,9 +154,11 @@ class MainProcess {
     //also __dirname
     return path.join(app.getAppPath(), '/dist');
   }
-  private static notifyAllWindows(winId: number, event: string, ...args: any[]): void {
+  private static notifyAllWindows(notifySameWindow: boolean, winId: number, event: string, ...args: any[]): void {
     BrowserWindow.getAllWindows().forEach((e, i) => {
-      e.webContents.send(RPCMethods.windowEvent, winId, event, ...args);
+      if (notifySameWindow === true || (notifySameWindow === false && e.id !== winId)) {
+        e.webContents.send(RPCMethods.windowEvent, winId, event, ...args);
+      }
     });
   }
   private static registerCallbacks(): void {
@@ -328,11 +330,11 @@ class MainProcess {
         var bw = BrowserWindow.fromId(arg[0]);
         if (arg[1]) {
           bw.show();
-          MainProcess.notifyAllWindows(arg[0], WindowEvent.onShow, true);
+          MainProcess.notifyAllWindows(true, arg[0], WindowEvent.onShow, true);
         }
         else {
           bw.hide();
-          MainProcess.notifyAllWindows(arg[0], WindowEvent.onShow, false);
+          MainProcess.notifyAllWindows(true, arg[0], WindowEvent.onShow, false);
         }
       }
       catch (ex) {
@@ -345,7 +347,7 @@ class MainProcess {
         console.log("Closing window " + arg[0]);
         var bw = BrowserWindow.fromId(arg[0]);
         bw.close();
-        MainProcess.notifyAllWindows(arg[0], WindowEvent.onClose);
+        MainProcess.notifyAllWindows(true, arg[0], WindowEvent.onClose);
       }
       catch (ex) {
         console.log(ex);
@@ -405,7 +407,19 @@ class MainProcess {
         return null;
       }
     });
+    ipcMain.on(RPCMethods.windowEvent, async (event, ...args) => {
+      try {
+        let winId: number = args[0];
+        let ev: string = args[1];
+        args.splice(0, 2);
 
+        MainProcess.notifyAllWindows(false, winId, ev, args);
+      }
+      catch (ex) {
+        console.log(ex);
+        return null;
+      }
+    });
   }
 
 }

@@ -28,7 +28,11 @@
         "AppImage",
         "deb"
       ],
-      "icon": "./icon.png"
+      "icon": "./icon.png",
+      "synopsis" :"Sketch app",
+      "description" :"Sketch app",
+      "category" :"Utility"
+
     },
     "win": {
       "target": "squirrel",

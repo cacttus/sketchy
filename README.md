@@ -1,7 +1,7 @@
 
 # Sketchy
 
-A desktop only electron app that functions somewhat like .NET. 
+A Typescript / Electron app that emulates the .NET environment. 
 
 ## Building
 

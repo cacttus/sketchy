@@ -106,6 +106,7 @@ _Note: the extends:'null' is required to prevent electron-builder from looking a
 
 See the documentation for [electron-builder](https://www.electron.build/) for more info.
 
-## TODO:
+## TODO: / Bugs
 
-Select multiple directories
+* Select multiple directories
+* Linux: AppImage won't work on click (needs to be run via terminal)

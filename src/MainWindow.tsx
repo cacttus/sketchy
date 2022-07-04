@@ -27,7 +27,7 @@ export class MainWindow extends ElectronWindow {
   private _minTime: number = 1000; //millis
   private _curTime: number = this._maxTime; //millis -  5min
   private _imageTimer: NodeJS.Timer = null;
-  private _dataRootPath: string = './testdata';
+  private _dataRootPath: string = './testdata';  // TODO: multiple directories
   private _fileCount: number = -1;
   private _history: Array<string> = new Array<string>(); //image history 
   private _historyFileIndexes: Array<number> = new Array<number>();

@@ -105,3 +105,7 @@ You can configure electron-builder in the `build` property within `package.json`
 _Note: the extends:'null' is required to prevent electron-builder from looking at /public/electron.js_
 
 See the documentation for [electron-builder](https://www.electron.build/) for more info.
+
+## TODO:
+
+Select multiple directories

@@ -2,7 +2,7 @@
   "name": "sketchy",
   "productName": "sketchy",
   "version": "1.0.0",
-  "description": "My Electron application description.",
+  "description": "Sketch App",
   "main": "./dist/Main.js",
   "type": "commonjs",
   "scripts": {

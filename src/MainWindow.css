@@ -13,3 +13,6 @@ body {
 .pb-stop{
   color:rgba(210, 20, 20, 0.4);
 }
+.sketchyMain {
+  cursor:pointer;
+}

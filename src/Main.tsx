@@ -1,9 +1,9 @@
 import { app, BrowserWindow, ipcMain, Menu, MenuItem, dialog, OpenDialogOptions } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import { RPCMethods, ErrorCode, WindowEvent } from "./Remote"
+import { RPCMethods, ErrorCode, WindowEvent, WinProps } from "./Remote"
 import { Stats } from 'fs'
-
+const { exec } = require("child_process");
 /**
  This is the main process code, which can be moved into the rendering thread.
  If you enable node integration in electron, you don't need a Main process, or, IPC. 
@@ -108,15 +108,6 @@ class MainProcess {
       label: 'File',
       submenu: [
         {
-          label: 'Fullscreen',
-          accelerator: 'F11',
-          click: () => {
-            MainProcess.mainWindow().setFullScreenable(true);
-            MainProcess.mainWindow().setFullScreen(!MainProcess.mainWindow().isFullScreen());
-          }
-        },
-
-        {
           label: 'Devtools',
           role: 'toggleDevTools',
           accelerator: 'F12',
@@ -194,6 +185,9 @@ class MainProcess {
 
     ipcMain.handle(RPCMethods.path_join, async (event, arg) => {
       return path.join(arg[0], arg[1]);
+    });
+    ipcMain.handle(RPCMethods.path_dirname, async (event, arg) => {
+      return path.dirname(arg[0]);
     });
     ipcMain.handle(RPCMethods.fs_access, async (event, arg) => {
       try {
@@ -372,6 +366,7 @@ class MainProcess {
         return null;
       }
     });
+    //Note: the "on" not "handle"
     ipcMain.on(RPCMethods.callWindow, async (event, ...args) => {
       //fromID, toID, func, args
       try {
@@ -390,6 +385,7 @@ class MainProcess {
         return null;
       }
     });
+    //Note: the "on" not "handle"
     ipcMain.on(RPCMethods.replyWindow, async (event, ...args) => {
       try {
         console.log("Main: ReplyWindow: " + args)
@@ -407,6 +403,7 @@ class MainProcess {
         return null;
       }
     });
+    //Note: the "on" not "handle"
     ipcMain.on(RPCMethods.windowEvent, async (event, ...args) => {
       try {
         let winId: number = args[0];
@@ -420,6 +417,62 @@ class MainProcess {
         return null;
       }
     });
+    ipcMain.handle(RPCMethods.getWinProps, async (event, args) => {
+      try {
+
+        let bw = BrowserWindow.fromId(args[0]);
+        let wp: WinProps = new WinProps();
+
+        wp._fullscreen = bw.isFullScreen();
+        //...
+
+        return wp;
+      }
+      catch (ex) {
+        console.log(ex);
+        return null;
+      }
+    });
+    ipcMain.handle(RPCMethods.setWinProps, async (event, args) => {
+      try {
+        let bw = BrowserWindow.fromId(args[0]);
+        console.log("" + args[1])
+        let wp: WinProps = args[1];
+
+        if (wp._fullscreen !== undefined) {
+          console.log("win:" + args[0] + " setting fullscreen:" + wp._fullscreen);
+          console.log("win:" + args[0] + " FS enable: " + bw.isFullScreenable())
+          if (!bw.isFullScreenable()) {
+            bw.setFullScreenable(true);
+          }
+          bw.setFullScreen(wp._fullscreen);
+        }
+        //...
+
+        return true;
+      }
+      catch (ex) {
+        console.log(ex);
+        return false;
+      }
+    });
+    ipcMain.handle(RPCMethods.shellExecute, async (event, args) => {
+      try {
+        let cmd: string = args[0];
+        console.log("shellexec: " + cmd);
+        let { strOut, strErr} = await exec(cmd, (error: any, stdout: any, stderr: any) => {
+          let o = stdout.toString();
+          let e= stderr.toString();
+          return { o,e};
+        });
+        return JSON.stringify({ strOut, strErr });
+      }
+      catch (ex) {
+        console.log(ex);
+        return null;
+      }
+    });
+
   }
 
 }

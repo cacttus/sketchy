@@ -1,4 +1,5 @@
 import { IpcRenderer } from "electron";
+import { string } from "prop-types";
 import { Stats } from "webpack";
 
 //RPC methods that we send to the SERVER (main.js)
@@ -8,6 +9,7 @@ export class RPCMethods {
   public static createWindow: string = "createWindow";
   public static createWindowDetails: string = "createWindowDetails";
   public static path_join: string = "path_join";
+  public static path_dirname: string = "path_dirname";
   public static fs_access: string = "fs_access";
   public static fs_readFile: string = "fs_readFile";
   public static fs_writeFile: string = "fs_writeFile";
@@ -27,6 +29,9 @@ export class RPCMethods {
   public static replyWindow: string = "replyWindow";
   public static windowEvent: string = "windowEvent";
   public static onResize: string = 'onResize';
+  public static getWinProps: string = 'getWinProps';
+  public static setWinProps: string = 'setWinProps';
+  public static shellExecute: string = 'shellExecute';
 }
 //Events received from other windows
 export class WindowEvent {
@@ -47,6 +52,13 @@ export class FileFilter {
 export class ErrorCode {
   public static Success: 0;
   public static WindowDoesNotExist: 1;
+}
+export class WinProps {
+  public _fullscreen: boolean = undefined;
+
+  public constructor(fullscreen: boolean = undefined) {
+    this._fullscreen = fullscreen;
+  }
 }
 
 export class Remote {
@@ -77,6 +89,9 @@ export class Remote {
   }
   public static path_join(path1: string, path2: string): Promise<string> {
     return (window as any).api.callSync(RPCMethods.path_join, path1, path2);
+  }
+  public static path_dirname(path: string): Promise<string> {
+    return (window as any).api.callSync(RPCMethods.path_dirname, path);
   }
   public static path_resolve(path1: string): Promise<string> {
     //Returns the fully rooted path
@@ -164,7 +179,16 @@ export class Remote {
   public static isDirectory(path: string): Promise<boolean> {
     return (window as any).api.callSync(RPCMethods.isDirectory, path)
   }
-  public static onWindow(windowId: number, ev: string, lambda: any) {
-
+  public static getWinProps(winId: number): Promise<WinProps> {
+    return (window as any).api.callSync(RPCMethods.getWinProps, winId)
+  }
+  public static setWinProps(winId: number, wp: WinProps): Promise<boolean> {
+    //Set the properties for the window. 
+    //For all unset properties, set them to undefined
+    return (window as any).api.callSync(RPCMethods.setWinProps, winId, wp)
+  }
+  public static shellExecute(command: string): Promise<any> {
+    //returns a JSON {stdout, stderr}, or, null when an exception is thrown.
+    return (window as any).api.callSync(RPCMethods.shellExecute, command)
   }
 }

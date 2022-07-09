@@ -24,6 +24,7 @@ export class SettingsWindow extends ElectronWindow {
   private _repeatCtl: string = "repeat";
   private _directoryCtl: string = "directory";
   private _cacheCtl: string = "cache_size";
+  private _imageApp: string = "image_app";
 
   public constructor() {
     super();
@@ -35,23 +36,26 @@ export class SettingsWindow extends ElectronWindow {
     this._configFile = new ConfigFile(await this.settingsFilePath(), {
       //Numeric UPdown
       "time_minutes": new ConfigFilePair(
-        (val: string) => { $('#' + that._timeMinutesCtl).val(val) },
+        (val: string) => { $('#' + that._timeMinutesCtl).val(val); },
         (key: string) => { return $('#' + that._timeMinutesCtl).val().toString(); })
       //Numeric Updown
       , "time_seconds": new ConfigFilePair(
-        (val: string) => { $('#' + that._timeSecondsCtl).val(val) },
+        (val: string) => { $('#' + that._timeSecondsCtl).val(val); },
         (key: string) => { return $('#' + that._timeSecondsCtl).val().toString(); })
       //Checkbox
       , "repeat": new ConfigFilePair(
-        (val: string) => { $('#' + that._repeatCtl).prop("checked", val) },
+        (val: string) => { $('#' + that._repeatCtl).prop("checked", val); },
         (key: string) => { return $('#' + that._repeatCtl).prop("checked"); })
       //Textbox
       , "directory": new ConfigFilePair(
-        (val: string) => { $('#' + that._directoryCtl).val(val) },
+        (val: string) => { $('#' + that._directoryCtl).val(val); },
         (key: string) => { return $('#' + that._directoryCtl).prop("value"); })
       , "cache_size": new ConfigFilePair(
-        (val: string) => { $('#' + that._cacheCtl).val(val) },
+        (val: string) => { $('#' + that._cacheCtl).val(val); },
         (key: string) => { return $('#' + that._cacheCtl).val().toString(); })
+      , "image_app": new ConfigFilePair(
+        (val: string) => { $('#' + that._imageApp).val(val); },
+        (key: string) => { return $('#' + that._imageApp).prop("value"); })
     });
     await this.load();
   }
@@ -69,6 +73,9 @@ export class SettingsWindow extends ElectronWindow {
   }
   public cache(): string {
     return $('#' + this._cacheCtl).val() as string;
+  }
+  public imageApp(): string {
+    return $('#' + this._imageApp).val() as string;
   }
   protected override getCreateInfo?(): WindowCreateInfo {
     let x = new WindowCreateInfo();
@@ -134,7 +141,19 @@ export class SettingsWindow extends ElectronWindow {
               </InputGroup>
             </Col>
           </Row>
-
+          <Row>
+            <Col xs={12} sm={1} md={1} lg={1}>
+              <Form.Label>External Image App (app name, no spaces):</Form.Label>
+            </Col>
+            <Col xs={12} sm={11} md={11} lg={11}>
+              <InputGroup className="mb-3">
+                <Form.Control id="image_app"
+                type="text"
+                defaultValue="xviewer" 
+                onChange={() => { that.save(); }} />
+              </InputGroup>
+            </Col>
+          </Row>
           {/* Test controls */}
           <div style={{ display: 'none' }}>
             <div style={{ minHeight: '2rem' }} ></div>

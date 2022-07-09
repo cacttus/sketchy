@@ -26,12 +26,13 @@ export class AboutWindow extends ElectronWindow {
         <h3>Controls</h3>
         <ul>
           <p>Space = Stop/Start timer.</p >
-          <p>Left = Previous Image</p>
-          <p>Right, n = Next Image (random), or next image if in history.</p>
+          <p>n = Next file.</p>
+          <p>Left = Previous file</p>
+          <p>Right, n = Next file (random), or next file if in history.</p>
           <p>Up = Add 30s.</p>
           <p>Down = Remove 30s.</p>
-          <p>r = Reset timer</p>
-          <p>c = Clear History</p>
+          <p>shift+r = Reset timer</p>
+          <p>shift+c = Clear History</p>
         </ul>
         <Form.Group>
           <div className="modal-footer">

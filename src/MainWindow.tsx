@@ -4,7 +4,7 @@ import $ from 'jquery';
 import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import * as Mousetrap from 'mousetrap';
-import { Remote, WindowEvent } from "./Remote";
+import { Remote, WindowEvent, WinProps } from "./Remote";
 import { ElectronWindow, WindowCreateInfo } from "./ElectronWindow";
 import { Controls } from "./Controls";
 import './MaterialIcons.scss';
@@ -41,6 +41,7 @@ export class MainWindow extends ElectronWindow {
   private _cachedFiles: Array<string> = new Array<string>();
   private _cachedFileIndexes: Array<number> = new Array<number>();
   private _cfileCacheCount: number = 14;//How many files we cache.
+  private _externalImageApp: string = "xviewer";
 
   public constructor() {
     super();
@@ -63,7 +64,8 @@ export class MainWindow extends ElectronWindow {
     let root = await this.callWindow(this._settingsWindow, "directory");
     that._cfileCacheCount = await this.callWindow(this._settingsWindow, "cache");
     let repeat = await this.callWindow(this._settingsWindow, "repeat");
-    
+    that._externalImageApp = await this.callWindow(this._settingsWindow, "imageApp");
+
     if (repeat != that._repeat) {
       that._repeat = repeat;
       this.clearCache();
@@ -119,8 +121,9 @@ export class MainWindow extends ElectronWindow {
     console.log(msg);
     this.showMsg(duration);
   }
-  protected showNav(duration: number = 2000): void {
+  protected showNav(duration: number = 1000): void {
     //Pop up the nav, hide after a few seconds
+    $('.sketchyMain').css('cursor', 'pointer');
     let nav = $('#mainNav');
     if (!nav.is(':visible')) {
       nav.fadeIn(100);
@@ -128,7 +131,8 @@ export class MainWindow extends ElectronWindow {
     clearInterval(this._showNavTimer);
     this._showNavTimer = null;
     this._showNavTimer = setInterval(() => {
-      nav.fadeOut(100);
+      nav.fadeOut(50);
+      $('.sketchyMain').css('cursor', 'none');
     }, duration);
   }
   protected showMsg(duration: number = 2000): void {
@@ -148,25 +152,27 @@ export class MainWindow extends ElectronWindow {
     //Note: the super class is not constructed when render() is run
 
     return (
-      <div style={{ maxHeight: '100vh', margin: '0', padding: '0' }} className="">
+      <div style={{ maxHeight: '100vh', margin: '0', padding: '0' }} className="sketchyMain">
         <Form className="align-items-center" style={{ maxHeight: '100vh', margin: '0', padding: '0', textAlign: 'center' }}>
           <div style={{ position: 'absolute', width: '100%' }} id="mainNav" >
             <Nav activeKey="/home" className="bg-dark p-1">
-              <Nav.Item className="p-0">
+              <Nav.Item className="p-1">
                 <Dropdown>
                   <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
                     File
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
+                    <Dropdown.Item onClick={async () => { await that.toggleFullscreen(); }}>Fullscreen</Dropdown.Item>
                     <Dropdown.Item onClick={() => { that.randomImage(); }}>Random Image <span className="material-icons">face</span></Dropdown.Item>
                     <Dropdown.Item onClick={async () => {
+                      that.pause();
                       await Remote.showWindow(that._settingsWindow, true);
                     }}>Settings</Dropdown.Item>
                     <Dropdown.Item onClick={() => { Remote.closeWindow(that.winId()); }}>Exit</Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
               </Nav.Item>
-              <Nav.Item className="p-0">
+              <Nav.Item className="p-1">
                 <Dropdown>
                   <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
                     Help
@@ -178,6 +184,38 @@ export class MainWindow extends ElectronWindow {
                     }}>About</Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
+              </Nav.Item>
+              <Nav.Item className="p-3"></Nav.Item>
+              <Nav.Item className="p-1">
+                <Button id="btnStartStop" onClick={() => {
+                  if (that._state === State.start) {
+                    that.pause();
+                  }
+                  else {
+                    //Only update when we start/stop.
+                    that.start();
+                  }
+
+                }}>Start</Button>
+              </Nav.Item>
+              <Nav.Item className="p-1">
+                <Button onClick={async () => {
+                  await that.nextImage();
+                  that.reset();
+                }}>Next</Button>
+              </Nav.Item>
+              <Nav.Item className="p-1">
+                <Button onClick={async () => {
+                  await that.prevImage();
+                }}>Prev</Button>
+              </Nav.Item>
+              <Nav.Item className="p-1">
+                <Button id="btnStartStop" onClick={async () => {
+                  let f = that.currentImage();
+                  // let p = await Remote.path_dirname(f);
+                  let x = await Remote.shellExecute(that._externalImageApp + ' "' + f + '"');
+                  console.log("ret:" + x);
+                }}>Open Image</Button>
               </Nav.Item>
             </Nav>
             <FormLabel id="infoMessage" className="labelMessage" ></FormLabel>
@@ -199,8 +237,8 @@ export class MainWindow extends ElectronWindow {
     this.scaleImage();
   }
   protected override onMouseMove(curPos: vec2, delta: vec2): void {
-    this.showNav(2000);
-    this.showMsg(2000);
+    this.showNav(1000);
+    this.showMsg(1000);
   }
   private clearHistory(): void {
     this._history = new Array<string>(); //image history 
@@ -240,6 +278,10 @@ export class MainWindow extends ElectronWindow {
     if (await Remote.fileExists(img)) {
       await this.setImageFromFile(img);
     }
+  }
+  private currentImage() {
+    let img = this._history[this._historyIndex];
+    return img;
   }
   private async prevImage() {
     this.pause();
@@ -290,42 +332,56 @@ export class MainWindow extends ElectronWindow {
 
     $('#timelabel').show().html(str).delay(1000).fadeOut(400);
   }
+  private async toggleFullscreen() {
+    let that = this;
+    let wp: WinProps = await Remote.getWinProps(that.winId());
+    await Remote.setWinProps(that.winId(), new WinProps(!wp._fullscreen));
+  }
   private registerKeys(): void {
     let that = this;
     //note: win/cmd key = 'meta'
-    Mousetrap.bind('esc', () => {
-      that.close();
-    })
+    Mousetrap.bind('esc', async () => {
+      let wp: WinProps = await Remote.getWinProps(that.winId());
+      if (wp._fullscreen) {
+        await Remote.setWinProps(that.winId(), new WinProps(false));
+      }
+      else {
+        that.close();
+      }
+    }, 'keyup')
+    Mousetrap.bind('f11', async () => {
+      that.toggleFullscreen();
+    }, 'keyup')
     Mousetrap.bind('n', () => {
       that.nextImage();
       that.reset();
-    })
+    }, 'keyup')
     Mousetrap.bind('right', async () => {
       await that.nextImage();
       that.reset();
-    })
+    }, 'keyup')
     Mousetrap.bind('left', async () => {
       await that.prevImage();
-    })
+    }, 'keyup')
     Mousetrap.bind('up', () => {
       that.addTime(30);
-    })
+    }, 'keyup')
     Mousetrap.bind('down', () => {
       that.addTime(-30);
-    })
-    Mousetrap.bind('ctrl+up', () => {
+    }, 'keyup')
+    Mousetrap.bind('shift+up', () => {
       that.addTime(60);
-    })
-    Mousetrap.bind('ctrl+down', () => {
+    }, 'keyup')
+    Mousetrap.bind('shift+down', () => {
       that.addTime(-60);
-    })
-    Mousetrap.bind('r', () => {
+    }, 'keyup')
+    Mousetrap.bind('shift+r', () => {
       that.reset();
-    })
-    Mousetrap.bind('c', () => {
+    }, 'keyup')
+    Mousetrap.bind('shift+c', () => {
       that.clearHistory();
       that.clearCache();
-    })
+    }, 'keyup')
     Mousetrap.bind('space', async () => {
       if (that._state === State.start) {
         that.pause();
@@ -334,7 +390,7 @@ export class MainWindow extends ElectronWindow {
         //Only update when we start/stop.
         that.start();
       }
-    })
+    }, 'keyup')
   }
   private start(): void {
     var that = this;
@@ -346,6 +402,8 @@ export class MainWindow extends ElectronWindow {
     if (that._state === State.start) {
     }
     else if (that._state === State.stop) {
+      $('#btnStartStop').html("Pause");
+
       console.log("starting");
       that.nextImage();
 
@@ -379,6 +437,7 @@ export class MainWindow extends ElectronWindow {
     else if (that._state === State.pause) {
       //Paused. Just start.
       that._state = State.start;
+      $('#btnStartStop').html("Pause");
     }
     else {
       console.log("Invalid state " + that._state);
@@ -392,6 +451,7 @@ export class MainWindow extends ElectronWindow {
   private stop(): void {
     let that = this;
     that._state = State.stop;
+    $('#btnStartStop').html("Start");
     that.reset();
     clearInterval(that._imageTimer);
     that._imageTimer = null;
@@ -399,6 +459,7 @@ export class MainWindow extends ElectronWindow {
     that._progressBar().css('background-color', '#770000');
   }
   private pause(): void {
+    $('#btnStartStop').html("Continue");
     let that = this;
     that._state = State.pause;
     that._progressBar().css('background-color', '#AAAAAA');

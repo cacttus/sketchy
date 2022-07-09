@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import { RPCMethods, ErrorCode, WindowEvent, WinProps } from "./Remote"
 import { Stats } from 'fs'
+import { throwDeprecation } from 'process';
 const { exec } = require("child_process");
 /**
  This is the main process code, which can be moved into the rendering thread.
@@ -19,10 +20,10 @@ class MainProcess {
     let win = MainProcess.createWindowDetails('Sketchy', 'MainWindow.js', 800, 600, false, false);
     MainProcess._windows.push(win);
     win.show();
-    //Close the application when main window closes
-    win.on("close", (e) => {
-      app.quit();
-    });
+    // //Close the application when main window closes
+    // win.on("close", (e) => {
+    //   app.quit();
+    // });
 
     //Register RPC callbacks
     MainProcess.registerCallbacks();
@@ -68,6 +69,19 @@ class MainProcess {
     console.log(indexFileName + " location: " + indexFileloc);
     bw.loadFile(indexFileloc);
 
+    //TODO:
+    // bw.on('minimize', (e: Electron.Event) => {
+    //   //e.preventDefault();
+    // });
+    bw.on('close', (e: Electron.Event) => {
+      //Call onClose on the window, which (by default) calls back to the server to close the window.
+      bw.webContents.send(RPCMethods.onClose);
+      e.preventDefault();
+    });
+    bw.on('resize', (e: Electron.Event, b: boolean) => {
+      bw.webContents.send(RPCMethods.onResize, bw.getSize()[0], bw.getSize()[1]);
+    });
+
     //Dynamically create the window js file.
     var nl = "\n";
     bw.webContents.once('dom-ready', () => {
@@ -92,9 +106,6 @@ class MainProcess {
       )
     });
 
-    bw.addListener('resize', (e: Electron.Event, b: boolean) => {
-      bw.webContents.send(RPCMethods.onResize, bw.getSize()[0], bw.getSize()[1]);
-    });
     return bw;
   };
   public ExitApp(): void {
@@ -113,14 +124,6 @@ class MainProcess {
           accelerator: 'F12',
           click: () => { MainProcess.mainWindow().webContents.openDevTools(); }
         },
-        // {
-        //   // label: 'About',
-        //   // role: 'about',
-        //   // accelerator: process.platform === 'darwin' ? 'Alt+Cmd+I' : 'Alt+Shift+I',
-        //   // click: () => {
-        //   //   MainProcess.createWindow('AboutWindow.js', 800, 600, false, false)
-        //   // }
-        // },
         {
           label: 'Exit',
           role: 'quit',
@@ -144,6 +147,12 @@ class MainProcess {
     //This will need to change vs debug / release
     //also __dirname
     return path.join(app.getAppPath(), '/dist');
+  }
+  private static forceCloseAllWindows(): void {
+    BrowserWindow.getAllWindows().forEach((e, i) => {
+      e.removeAllListeners('close');
+      e.close();
+    });
   }
   private static notifyAllWindows(notifySameWindow: boolean, winId: number, event: string, ...args: any[]): void {
     BrowserWindow.getAllWindows().forEach((e, i) => {
@@ -324,11 +333,11 @@ class MainProcess {
         var bw = BrowserWindow.fromId(arg[0]);
         if (arg[1]) {
           bw.show();
-          MainProcess.notifyAllWindows(true, arg[0], WindowEvent.onShow, true);
+          MainProcess.notifyAllWindows(true, arg[0], WindowEvent.onShowHide, true);
         }
         else {
           bw.hide();
-          MainProcess.notifyAllWindows(true, arg[0], WindowEvent.onShow, false);
+          MainProcess.notifyAllWindows(true, arg[0], WindowEvent.onShowHide, false);
         }
       }
       catch (ex) {
@@ -336,12 +345,20 @@ class MainProcess {
       }
     });
     ipcMain.handle(RPCMethods.closeWindow, async (event, arg) => {
-      //returns Stats, or null if DNE
+      //Force close a window.
+      //NOTE: this skips the "onClose" hook and forces the window closed (as, onClose simply calls this method)
       try {
         console.log("Closing window " + arg[0]);
         var bw = BrowserWindow.fromId(arg[0]);
+        bw.removeAllListeners('close'); //This is critical or we end up infinite loop
         bw.close();
         MainProcess.notifyAllWindows(true, arg[0], WindowEvent.onClose);
+
+        if (bw === MainProcess.mainWindow()) {
+          MainProcess.forceCloseAllWindows();
+          app.quit();
+        }
+
       }
       catch (ex) {
         console.log(ex);
@@ -460,10 +477,10 @@ class MainProcess {
       try {
         let cmd: string = args[0];
         console.log("shellexec: " + cmd);
-        let { strOut, strErr} = await exec(cmd, (error: any, stdout: any, stderr: any) => {
+        let { strOut, strErr } = await exec(cmd, (error: any, stdout: any, stderr: any) => {
           let o = stdout.toString();
-          let e= stderr.toString();
-          return { o,e};
+          let e = stderr.toString();
+          return { o, e };
         });
         return JSON.stringify({ strOut, strErr });
       }

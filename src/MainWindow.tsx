@@ -95,18 +95,18 @@ export class MainWindow extends ElectronWindow {
           case WindowEvent.onCreate:
             this.updateSettings();
             break;
-          case WindowEvent.onClose:
-            this.updateSettings();
-            break;
-          case WindowEvent.onShow:
+          // case WindowEvent.onClose:
+          //   this.updateSettings();
+          //   break;
+          case WindowEvent.onShowHide:
             if (args && args.length && args[0] === false) {
+              console.log("onshowhide settings")
               this.updateSettings();
             }
             break;
         }
         break;
     }
-
   }
   protected override getCreateInfo?(): WindowCreateInfo {
     let x = new WindowCreateInfo();

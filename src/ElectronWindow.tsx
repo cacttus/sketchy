@@ -40,6 +40,12 @@ export class ElectronWindow {
     // Remote.showWindow(___winID, true); //window must be manually shown
 
     //Window events...
+    Remote.receiveBind(RPCMethods.onClose, (...args: any[]) => {
+      //This is the onResize event for THIS window
+      //Technically this can go away.
+      console.log("Renderer:onClose: " + args);
+      that.onClose();
+    });
     Remote.receiveBind(RPCMethods.onResize, (...args: any[]) => {
       //This is the onResize event for THIS window
       //Technically this can go away.
@@ -115,6 +121,9 @@ export class ElectronWindow {
   }
   protected onMouseMove?(curPos: vec2, delta: vec2) { }
   protected onResize?(width: number, height: number) { }
+  protected onClose?() { 
+    this.close();
+  }
   protected getCreateInfo?(): WindowCreateInfo;
   protected render?(): JSX.Element;//Window controls here.
   protected receiveEvent?(winId: number, externalWindowEvent: string, ...args: any[]) {

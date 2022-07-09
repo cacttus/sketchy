@@ -180,9 +180,7 @@ export class SettingsWindow extends ElectronWindow {
               <Form.Control type="number" placeholder="3" min="0" max="100" />
             </InputGroup>
           </div>
-
         </Form.Group>
-
 
         <Form.Group>
           <div className="modal-footer">
@@ -200,5 +198,8 @@ export class SettingsWindow extends ElectronWindow {
   }
   private async load(): Promise<void> {
     await this._configFile.load();
+  }
+  protected override onClose(): void {
+    this.hide();
   }
 }

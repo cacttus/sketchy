@@ -29,6 +29,7 @@ export class RPCMethods {
   public static replyWindow: string = "replyWindow";
   public static windowEvent: string = "windowEvent";
   public static onResize: string = 'onResize';
+  public static onClose: string = 'onClose';
   public static getWinProps: string = 'getWinProps';
   public static setWinProps: string = 'setWinProps';
   public static shellExecute: string = 'shellExecute';
@@ -36,7 +37,7 @@ export class RPCMethods {
 //Events received from other windows
 export class WindowEvent {
   public static onCreate: string = "onCreate";
-  public static onShow: string = "onShow";//show & hide
+  public static onShowHide: string = "onShowHide";//show & hide
   public static onClose: string = "onClose";
   public static onResize: string = "onResize"; //w/h
 }

@@ -187,7 +187,7 @@ export class MainWindow extends ElectronWindow {
               </Nav.Item>
               <Nav.Item className="p-3"></Nav.Item>
               <Nav.Item className="p-1">
-                <Button id="btnStartStop" onClick={() => {
+                <Button id="btnStartStop" size="sm" onClick={() => {
                   if (that._state === State.start) {
                     that.pause();
                   }
@@ -199,18 +199,18 @@ export class MainWindow extends ElectronWindow {
                 }}>Start</Button>
               </Nav.Item>
               <Nav.Item className="p-1">
-                <Button onClick={async () => {
+                <Button size="sm" onClick={async () => {
                   await that.nextImage();
                   that.reset();
                 }}>Next</Button>
               </Nav.Item>
               <Nav.Item className="p-1">
-                <Button onClick={async () => {
+                <Button size="sm" onClick={async () => {
                   await that.prevImage();
                 }}>Prev</Button>
               </Nav.Item>
               <Nav.Item className="p-1">
-                <Button id="btnStartStop" onClick={async () => {
+                <Button size="sm" id="btnStartStop" onClick={async () => {
                   let f = that.currentImage();
                   // let p = await Remote.path_dirname(f);
                   let x = await Remote.shellExecute(that._externalImageApp + ' "' + f + '"');

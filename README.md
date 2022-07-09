@@ -1,7 +1,7 @@
 
 # Sketchy
 
-A Typescript / Electron app that emulates the .NET environment. 
+A Typescript / Electron app for art practice. 
 
 ## Building
 

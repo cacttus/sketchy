@@ -3,6 +3,8 @@
 
 A Typescript / Electron app for art practice. 
 
+<img src="screenshot.jpg" width="50%" text-align="center"/>
+
 ## Building
 
 Install Nodejs via cURL (Linux) or download (Windows). 

@@ -1,16 +1,19 @@
-import { app, BrowserWindow, ipcMain, Menu, MenuItem, dialog, OpenDialogOptions } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, MenuItem, dialog, OpenDialogOptions, nativeImage } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { RPCMethods, ErrorCode, WindowEvent, WinProps } from "./Remote"
 import { Stats } from 'fs'
 import { throwDeprecation } from 'process';
 const { exec } = require("child_process");
+//import appIcon from "./icons/icon.png";
+
 /**
  This is the main process code, which can be moved into the rendering thread.
  If you enable node integration in electron, you don't need a Main process, or, IPC. 
  This is useful for quick desktop apps that run on localhost, and don't require internet security.
 */
 class MainProcess {
+  private static _iconFile: string = "icon.ico";
   private static _windows: Array<BrowserWindow> = new Array<BrowserWindow>();
   public static mainWindow(): BrowserWindow { return this._windows[0]; }
 
@@ -20,6 +23,17 @@ class MainProcess {
     let win = MainProcess.createWindowDetails('Sketchy', 'MainWindow.js', 800, 600, false, false);
     MainProcess._windows.push(win);
     win.show();
+
+    //**Mac Tray Icon
+    if (app && app.dock) {
+      //OSx only
+      console.log(app.getAppPath());
+      const image = nativeImage.createFromPath(
+        path.join(app.getAppPath(), MainProcess._iconFile)
+      );
+      app.dock.setIcon(image);
+    }
+
     // //Close the application when main window closes
     // win.on("close", (e) => {
     //   app.quit();
@@ -43,7 +57,7 @@ class MainProcess {
       fullscreen: fullscreen,
       autoHideMenuBar: true, //hide menu bar
       titleBarStyle: 'hidden',
-      icon: './icon.png',
+      //icon: icon,//set below
       modal: is_modal ? true : false,
       minimizable: is_modal ? true : false,
       maximizable: is_modal ? true : false,
@@ -105,6 +119,16 @@ class MainProcess {
         ""
       )
     });
+
+    //Set Icon
+    try {
+      let icpath = __dirname + "/icons/icon512x512.png";
+      let x = nativeImage.createFromPath(icpath);
+      bw.setIcon(x);
+    }
+    catch (ex) {
+      console.log("Failed to set icon : " + ex);
+    }
 
     return bw;
   };

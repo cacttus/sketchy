@@ -67,7 +67,7 @@ export class ElectronWindow {
 
       Remote.send(RPCMethods.replyWindow, to, from, func, res);
     });
-    Remote.receiveBind(RPCMethods.windowEvent, (...args: any[]) => {
+    Remote.receiveBind(RPCMethods.windowEvent, async (...args: any[]) => {
       //Window events from other windows
       console.log("Renderer:WindowEvent:" + args)
 
@@ -75,7 +75,7 @@ export class ElectronWindow {
       let eventName: string = args[1];
       args.splice(0, 2);
 
-      that.receiveEvent(winId, eventName, ...args);
+      await that.receiveEvent(winId, eventName, ...args);
     });
     document.addEventListener('mousemove', (e: MouseEvent) => {
       let cp: vec2 = new vec2();
@@ -126,7 +126,7 @@ export class ElectronWindow {
   }
   protected getCreateInfo?(): WindowCreateInfo;
   protected render?(): JSX.Element;//Window controls here.
-  protected receiveEvent?(winId: number, externalWindowEvent: string, ...args: any[]) {
+  protected async receiveEvent?(winId: number, externalWindowEvent: string, ...args: any[]) {
     //Override this method in subclass to get close/show/open events from other windows.
   }
   protected sendEvent(event: string, ...args: any[]): void {

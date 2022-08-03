@@ -80,7 +80,7 @@ export class SettingsWindow extends ElectronWindow {
   protected override getCreateInfo?(): WindowCreateInfo {
     let x = new WindowCreateInfo();
     x._title = "Settings";
-    x._height = 400;
+    x._height = 600;
     x._width = 400;
     return x;
   }

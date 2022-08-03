@@ -1,42 +1,40 @@
 {
   "name": "sketchy",
   "productName": "sketchy",
-  "version": "1.0.0",
-  "description": "Sketch App",
+  "version": "1.0.1",
+  "description": "Rapid sketch app.",
   "main": "./dist/Main.js",
   "type": "commonjs",
+  "icon":"./dist/icons/icon128x128.png",
   "scripts": {
     "lint": "eslint --ext .tsx --ext .ts .",
     "build-dev": "./build-dev.sh",
     "start": "npm run build-dev && electron ."
   },
   "author": {
-    "name": "Barney Rubble",
-    "email": "b@rubble.com",
-    "url": "http://barnyrubble.tumblr.com/"
+    "name": "Derek Page",
+    "email": "america971@gmail.com",
+    "url": "http://metalmario.net/"
   },
   "build": {
     "extends": null,
     "appId": "com.sketchy.app",
+    "icon":"dist/icons/icon.icns",
     "files": [
       "./dist/**/*",
       "./dist/Main.js"
     ],
     "asar": true,
     "linux": {
-      "target": [
-        "AppImage",
-        "deb"
-      ],
-      "icon": "./icon.png",
-      "synopsis" :"Sketch app",
-      "description" :"Sketch app",
-      "category" :"Utility"
-
+      "target": ["AppImage", "deb"],
+      "icon": "dist/icons/icon.icns",
+      "synopsis": "Sketch app",
+      "description": "Sketch app",
+      "category": "Utility"
     },
     "win": {
       "target": "squirrel",
-      "icon": "./icon.png"
+      "icon": "dist/icons/icon.png"
     },
     "directories": {
       "buildResources": "dist"
@@ -44,74 +42,54 @@
   },
   "keywords": [],
   "license": "MIT",
-  "config": {
-    "forge": {
-      "packagerConfig": {},
-      "makers": [
-        {
-          "name": "@electron-forge/maker-zip",
-          "platforms": [
-            "darwin"
-          ]
-        },
-        {
-          "name": "@electron-forge/maker-deb",
-          "config": {}
-        },
-        {
-          "name": "@electron-forge/maker-rpm",
-          "config": {}
-        }
-      ]
-    }
-  },
   "devDependencies": {
     "@popperjs/core": "^2.11.5",
-    "@svgr/webpack": "^6.2.1",
+    "@svgr/webpack": "^6.3.1",
     "@types/jquery": "^3.5.14",
     "@types/mousetrap": "^1.6.9",
-    "@types/node": "^16.11.36",
-    "@types/react": "^18.0.9",
+    "@types/node": "^18.6.3",
+    "@types/react": "^18.0.15",
     "@types/react-datetime-picker": "^3.4.1",
-    "@types/react-dom": "^18.0.4",
+    "@types/react-dom": "^18.0.6",
     "@types/react-time-picker": "^4.0.2",
     "bootstrap-daterangepicker": "^3.1.0",
-    "concurrently": "^7.2.0",
+    "concurrently": "^7.3.0",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.7.1",
-    "electron": "18.2.3",
-    "electron-builder": "^23.0.3",
-    "eslint-webpack-plugin": "^3.1.1",
+    "electron": "20.0.0",
+    "electron-builder": "^23.3.3",
+    "eslint-webpack-plugin": "^3.2.0",
     "file-loader": "^6.2.0",
     "html-webpack-plugin": "^5.5.0",
     "jquery": "^3.6.0",
     "lodash": "^4.17.21",
-    "moment": "^2.29.3",
+    "moment": "^2.29.4",
     "mousetrap": "^1.6.5",
     "node-sass": "^7.0.1",
+    "npm-check-updates": "^16.0.5",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-bootstrap-daterangepicker": "^7.0.0",
     "react-datetime-picker": "^3.5.0",
-    "react-dom": "^18.1.0",
+    "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
     "react-svg-loader": "^3.0.3",
     "react-time-picker": "^4.5.0",
-    "sass-loader": "^13.0.0",
+    "sass-loader": "^13.0.2",
     "style-loader": "^3.3.1",
     "svg-url-loader": "^7.1.1",
     "ts-keycode-enum": "^1.0.6",
-    "ts-loader": "^9.3.0",
-    "typescript": "^4.5.5",
+    "ts-loader": "^9.3.1",
+    "typescript": "^4.7.4",
     "web-vitals": "^2.1.4",
-    "webpack": "^5.72.1",
-    "webpack-cli": "^4.9.2",
-    "webpack-dev-server": "^4.9.0"
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0",
+    "webpack-dev-server": "^4.9.3"
   },
   "dependencies": {
-    "@emotion/react": "^11.9.0",
-    "@emotion/styled": "^11.8.1",
-    "bootstrap": "^5.1.3",
+    "@emotion/react": "^11.10.0",
+    "@emotion/styled": "^11.10.0",
+    "bootstrap": "^5.2.0",
     "electron-build": "^0.0.3",
     "react-bootstrap": "^2.4.0",
     "rpmbuild": "^0.0.23",

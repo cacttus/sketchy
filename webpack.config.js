@@ -38,11 +38,18 @@ var template = {
         }]
       },
       {
-        test: /\.(sa|sc|c)ss$/,
+        test: /\.(sass|scss)$/,
         use: [
           'style-loader',
-          'css-loader',
+          'css-loader', 
           'sass-loader',
+        ],
+      },
+      {
+        test: /\.(css)$/,
+        use: [
+          'style-loader',
+          'css-loader', 
         ],
       },
       {
@@ -61,7 +68,7 @@ var template = {
   output: {
     path: path.resolve(__dirname, "./dist"),
     filename: "[name].js",
-    publicPath: 'auto',
+    publicPath: '',
     clean: false,
     library: {
       type: 'var',
@@ -78,8 +85,9 @@ var template = {
         { from: './src/require.js', to: './require.js' },
         { from: './src/bootstrap-datetimepicker.js', to: './bootstrap-datetimepicker.js' },
         { from: './src/bootstrap-datetimepicker.css', to: './bootstrap-datetimepicker.css' },
-        { from: './src/icon.ico', to: './icon.ico' },
-        { from: './src/icon.png', to: './icon.png' },
+
+        { from: './src/icons', to: './icons' },
+
       ],
     }),
 

@@ -42,6 +42,7 @@ export class MainWindow extends ElectronWindow {
   private _cachedFileIndexes: Array<number> = new Array<number>();
   private _cfileCacheCount: number = 14;//How many files we cache.
   private _externalImageApp: string = "xviewer";
+  private _settingsUpdated = false;
 
   public constructor() {
     super();
@@ -52,11 +53,11 @@ export class MainWindow extends ElectronWindow {
     that.registerKeys();
 
     that._settingsWindow = await Remote.createWindow("SettingsWindow.js");
-    //For some reason updateSettings() here is invalid. Most likely it has to do with how the init() method is injected on the server().
   }
   private async updateSettings(): Promise<void> {
     let that = this;
-    console.log("Update settings...");
+    that._settingsUpdated = false;
+    that.message("Caching files, please wait...");
 
     let mins: number = await this.callWindow(this._settingsWindow, "timeMinutes");
     let secs: number = await this.callWindow(this._settingsWindow, "timeSeconds");
@@ -85,23 +86,23 @@ export class MainWindow extends ElectronWindow {
 
       this.message("..File count = " + that._fileCount);
     }
+    this.message("Ready.");
+    that._settingsUpdated = true;
   }
-  protected override  receiveEvent(winId: number, winEvent: string, ...args: any[]): void {
+  protected override async receiveEvent(winId: number, winEvent: string, ...args: any[]) {
     //TODO:
     switch (winId) {
       case this._settingsWindow:
         console.log("Got settings window event " + winEvent + " args: " + args);
         switch (winEvent) {
           case WindowEvent.onCreate:
-            this.updateSettings();
+            await this.updateSettings();
             break;
           // case WindowEvent.onClose:
-          //   this.updateSettings();
-          //   break;
           case WindowEvent.onShowHide:
             if (args && args.length && args[0] === false) {
               console.log("onshowhide settings")
-              this.updateSettings();
+              await this.updateSettings();
             }
             break;
         }
@@ -162,8 +163,7 @@ export class MainWindow extends ElectronWindow {
                     File
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
-                    <Dropdown.Item onClick={async () => { await that.toggleFullscreen(); }}>Fullscreen</Dropdown.Item>
-                    <Dropdown.Item onClick={() => { that.randomImage(); }}>Random Image <span className="material-icons">face</span></Dropdown.Item>
+                    <Dropdown.Item onClick={async () => { await that.toggleFullscreen(); }}>Fullscreen <span className="material-icons">face</span></Dropdown.Item>
                     <Dropdown.Item onClick={async () => {
                       that.pause();
                       await Remote.showWindow(that._settingsWindow, true);
@@ -188,20 +188,15 @@ export class MainWindow extends ElectronWindow {
               <Nav.Item className="p-3"></Nav.Item>
               <Nav.Item className="p-1">
                 <Button id="btnStartStop" size="sm" onClick={() => {
-                  if (that._state === State.start) {
-                    that.pause();
-                  }
-                  else {
-                    //Only update when we start/stop.
-                    that.start();
-                  }
-
+                  that.startStop();
                 }}>Start</Button>
               </Nav.Item>
               <Nav.Item className="p-1">
                 <Button size="sm" onClick={async () => {
-                  await that.nextImage();
-                  that.reset();
+                  if (that._settingsUpdated) {
+                    await that.nextImage();
+                    that.reset();
+                  }
                 }}>Next</Button>
               </Nav.Item>
               <Nav.Item className="p-1">
@@ -352,16 +347,31 @@ export class MainWindow extends ElectronWindow {
     Mousetrap.bind('f11', async () => {
       that.toggleFullscreen();
     }, 'keyup')
-    Mousetrap.bind('n', () => {
-      that.nextImage();
-      that.reset();
+    Mousetrap.bind('n', async () => {
+      if (!that._settingsUpdated) {
+        this.message("Files are being cached please wait.");
+      }
+      else {
+        await that.nextImage();
+        that.reset();
+      }
     }, 'keyup')
     Mousetrap.bind('right', async () => {
-      await that.nextImage();
-      that.reset();
+      if (!that._settingsUpdated) {
+        this.message("Files are being cached please wait.");
+      }
+      else {
+        await that.nextImage();
+        that.reset();
+      }
     }, 'keyup')
     Mousetrap.bind('left', async () => {
-      await that.prevImage();
+      if (!that._settingsUpdated) {
+        this.message("Files are being cached please wait.");
+      }
+      else {
+        await that.prevImage();
+      }
     }, 'keyup')
     Mousetrap.bind('up', () => {
       that.addTime(30);
@@ -383,16 +393,25 @@ export class MainWindow extends ElectronWindow {
       that.clearCache();
     }, 'keyup')
     Mousetrap.bind('space', async () => {
+      await that.startStop();
+    }, 'keyup')
+  }
+  private async startStop() {
+    let that = this;
+    if (!that._settingsUpdated) {
+      this.message("Files are not ready please wait.");
+    }
+    else {
       if (that._state === State.start) {
-        that.pause();
+        await that.pause();
       }
       else {
         //Only update when we start/stop.
-        that.start();
+        await that.start();
       }
-    }, 'keyup')
+    }
   }
-  private start(): void {
+  private async start() {
     var that = this;
 
     that._progressBar().css('background-color', '#007700');
@@ -404,8 +423,8 @@ export class MainWindow extends ElectronWindow {
     else if (that._state === State.stop) {
       $('#btnStartStop').html("Pause");
 
-      console.log("starting");
-      that.nextImage();
+      console.log("starting..");
+      await that.nextImage();
 
       that._curTime = that._maxTime;
 
@@ -524,6 +543,8 @@ export class MainWindow extends ElectronWindow {
   private async randomImage(): Promise<string> {
     let that = this;
 
+    console.log("Getting random image...")
+
     //TODO: if Settings.Repeat == true
 
     let selected: string = '';
@@ -534,7 +555,12 @@ export class MainWindow extends ElectronWindow {
     if ((Globals.isNull(that._cachedFiles) || that._cachedFiles.length === 0) && (that._historyFileIndexes.length < that._fileCount)) {
       console.log("..Out of cached images...Creating random vals, cachesize=" + that._cfileCacheCount)
 
+      //Well, we assume that we actually get the file count before we get here, so we re-use settingsUpdated variable
+      //Sloppy. I guess it makes sense since without filecount, we wouldn't get here.
+      that._settingsUpdated = false;
       that._cachedFileIndexes = new Array<number>();
+
+      let startms: number = Date.now();
 
       //Dumb algorithm which approaches O(infinity). The correct approach would be to
       //divide the search space into a btree, and prune nodes that have been selected. Then we can use a random
@@ -570,6 +596,9 @@ export class MainWindow extends ElectronWindow {
       await MainWindow.traverseDirectory(that._dataRootPath, false, that._cachedFileIndexes, { val: that._fileCount }, fileList, null, null);
       console.log("...File list: (" + fileList.vals.length + "):  " + fileList.vals);
       console.log("...CACHE: " + that._cachedFiles.length + ", cached index count:" + that._cachedFileIndexes.length)
+
+      console.log("...." + (Date.now() - startms) + "ms");
+      that._settingsUpdated = true;
     }
 
     if (that._cachedFiles.length) {

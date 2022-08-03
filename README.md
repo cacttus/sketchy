@@ -3,8 +3,10 @@
 
 A Typescript / Electron app for art practice. 
 
+
 <center>  <img src="screenshot.jpg" width="50%"/></center>
 
+The API can be used as a prototype for desktop applications.
 
 ## Building
 
